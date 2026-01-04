@@ -1,1 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b1020" />
+  <title>Encounter Tracker</title>
+
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brandMark">⚔️</div>
+      <div>
+        <div class="brandTitle">Encounter Tracker</div>
+        <div class="brandSub">Campaign library • Initiative • Conditions • Mobile-friendly</div>
+      </div>
+    </div>
+
+    <div class="topbarActions">
+      <button class="btn ghost" id="btnInstall" hidden>Install</button>
+      <button class="btn ghost" id="btnResetAll" title="Clears local data (library + encounter)">Reset</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- LEFT: Campaign Library -->
+    <section class="card">
+      <div class="cardHeader">
+        <h2>Campaign Library</h2>
+        <p>Add PCs and monsters here, then build encounters from them.</p>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="library">Library</button>
+        <button class="tab" data-tab="import">Import/Export</button>
+      </div>
+
+      <div class="tabPanel active" id="tab-library">
+        <div class="row">
+          <div class="field">
+            <label>Name</label>
+            <input id="newName" placeholder="e.g. Dannick Vale" />
+          </div>
+
+          <div class="field">
+            <label>Type</label>
+            <select id="newType">
+              <option value="pc">PC</option>
+              <option value="monster">Monster</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Max HP</label>
+            <input id="newMaxHp" type="number" min="1" placeholder="e.g. 45" />
+          </div>
+
+          <div class="field">
+            <label>Init Bonus (optional)</label>
+            <input id="newInitBonus" type="number" step="1" placeholder="e.g. 3" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field grow">
+            <label>Avatar (optional)</label>
+            <input id="newAvatar" placeholder="Image URL or leave blank" />
+            <div class="hint">Tip: you can use a local file later, but URL keeps it simple for MVP.</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <button class="btn" id="btnAddToLibrary">Add to Library</button>
+        </div>
+
+        <hr class="sep" />
+
+        <div class="row split">
+          <h3>Saved Creatures</h3>
+          <div class="pillRow">
+            <span class="pill" id="countPCs">PCs: 0</span>
+            <span class="pill" id="countMonsters">Monsters: 0</span>
+          </div>
+        </div>
+
+        <div class="list" id="libraryList"></div>
+      </div>
+
+      <div class="tabPanel" id="tab-import">
+        <div class="grid2">
+          <div class="subcard">
+            <h3>Import JSON</h3>
+            <p class="muted">Accepts a campaign file exported from this app.</p>
+            <input type="file" id="importJson" accept=".json,application/json" />
+            <div class="row">
+              <button class="btn" id="btnImportJson">Import Campaign JSON</button>
+            </div>
+          </div>
+
+          <div class="subcard">
+            <h3>Export JSON</h3>
+            <p class="muted">Downloads a campaign file containing your library.</p>
+            <div class="row">
+              <button class="btn" id="btnExportJson">Export Campaign JSON</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="subcard">
+          <h3>Import PDF (basic)</h3>
+          <p class="muted">
+            This extracts text from a PDF using pdf.js and attempts a naive parse (Name + HP).
+            D&D Beyond PDFs vary wildly, so consider this a “starter hook” you can improve.
+          </p>
+          <input type="file" id="importPdf" accept="application/pdf" />
+          <div class="row">
+            <button class="btn" id="btnImportPdf">Extract & Try Import</button>
+          </div>
+          <div class="hint" id="pdfStatus"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Encounter -->
+    <section class="card">
+      <div class="cardHeader">
+        <h2>Encounter</h2>
+        <p>Select from the library, roll initiative, then run turns.</p>
+      </div>
+
+      <div class="encToolbar">
+        <button class="btn" id="btnAddSelected">Add Selected → Encounter</button>
+        <button class="btn ghost" id="btnClearEncounter">Clear Encounter</button>
+      </div>
+
+      <div class="row">
+        <div class="field grow">
+          <label>Encounter Name</label>
+          <input id="encName" placeholder="e.g. Underroot Ambush" />
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="btn" id="btnAutoInit">Auto-roll Initiative</button>
+        <button class="btn" id="btnBegin">Begin Encounter</button>
+        <button class="btn ghost" id="btnPause" disabled>Pause</button>
+        <button class="btn danger" id="btnEnd" disabled>End</button>
+      </div>
+
+      <div class="hint" id="encStatus"></div>
+
+      <hr class="sep" />
+
+      <div class="encGrid">
+        <div>
+          <h3>Encounter Roster</h3>
+          <div class="list" id="encList"></div>
+        </div>
+
+        <div>
+          <h3>Turn Actions</h3>
+
+          <div class="subcard">
+            <div class="row split">
+              <div class="muted">Current turn</div>
+              <div class="pill" id="turnPill">Not started</div>
+            </div>
+
+            <div class="field">
+              <label>Target</label>
+              <select id="targetSelect"></select>
+            </div>
+
+            <div class="row">
+              <div class="field grow">
+                <label>Damage</label>
+                <input id="damageInput" type="number" step="1" placeholder="e.g. 12" />
+                <div class="hint">Positive = damage, Negative = healing.</div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="field grow">
+                <label>Add Condition</label>
+                <input id="conditionInput" placeholder="e.g. Grappled" />
+              </div>
+              <button class="btn ghost" id="btnAddCondition">Add</button>
+            </div>
+
+            <div class="row">
+              <button class="btn" id="btnApplyDamage">Apply</button>
+              <button class="btn" id="btnNextTurn">Next</button>
+            </div>
+
+            <div class="hint muted">
+              Tip: Tap a creature in the roster to select it as the target.
+            </div>
+          </div>
+
+          <div class="subcard">
+            <h3>Win/Lose Logic</h3>
+            <p class="muted">
+              Monsters at 0 HP are marked <strong>DEFEATED</strong>. When all monsters are defeated, the encounter ends automatically.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- pdf.js for basic PDF text extraction -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/build/pdf.min.js"></script>
+  <script>
+    // pdf.js worker
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/build/pdf.worker.min.js";
+    }
+  </script>
+
+  <script src="./app.js"></script>
+</body>
+</html>
 
