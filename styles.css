@@ -391,4 +391,46 @@ input:focus, select:focus{
   opacity: .75;
   filter: grayscale(.2);
 }
+/* === Fix: keep encounter row buttons aligned + never spill === */
+.list .item {
+  justify-content: space-between;
+}
 
+.list .item .itemMain {
+  flex: 1 1 auto;
+  min-width: 0; /* IMPORTANT: allows the left side to shrink instead of pushing buttons out */
+}
+
+.list .item .itemActions {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;       /* keep buttons on one line */
+  white-space: nowrap;     /* keep button text on one line */
+}
+
+.list .item .itemActions .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* Optional polish: prevent long encounter names from shoving buttons offscreen */
+.list .item .itemTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Optional polish: clamp badge rows so they don't balloon the card */
+.list .item .itemMeta {
+  overflow: hidden;
+}
+@media (max-width: 520px) {
+  .list .item .itemActions .btn {
+    padding: 8px 10px;     /* slightly smaller so 3 buttons fit */
+    border-radius: 12px;
+    font-size: 14px;       /* keeps your font readable but tighter */
+  }
+}
