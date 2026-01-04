@@ -24,6 +24,8 @@ function loadState() {
   if (!raw) {
     return {
   library: [],
+  ...
+};
   selectedLibraryIds: new Set(),
   savedEncounters: [],
   encounter: {
@@ -294,9 +296,97 @@ function render() {
     opt.textContent = `${c.name} (${c.type})`;
     targetSelect.appendChild(opt);
   });
+
   if (enc.roster.length > 0) {
     const exists = enc.roster.some(x => x.encId === targetSelect.value);
     if (!exists) targetSelect.value = enc.roster[0].encId;
+  }
+
+  // Saved encounters list (for Encounters tab)
+  if (savedEncountersList) {
+    savedEncountersList.innerHTML = "";
+
+    if (!state.savedEncounters || state.savedEncounters.length === 0) {
+      savedEncountersList.innerHTML =
+        `<div class="hint">No saved encounters yet. Save one from an active roster.</div>`;
+    } else {
+      state.savedEncounters
+        .slice()
+        .sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""))
+        .forEach(se => {
+          const row = document.createElement("div");
+          row.className = "item";
+
+          const main = document.createElement("div");
+          main.className = "itemMain";
+          main.innerHTML = `
+            <div class="itemTitle">${escapeHtml(se.name || "Untitled Encounter")}</div>
+            <div class="itemMeta">
+              <span class="badge">${(se.roster || []).length} combatants</span>
+              <span class="badge">Monsters: ${(se.roster || []).filter(x => x.type === "monster").length}</span>
+              <span class="badge">PCs: ${(se.roster || []).filter(x => x.type === "pc").length}</span>
+            </div>
+          `;
+
+          const actions = document.createElement("div");
+          actions.className = "itemActions";
+
+          const loadBtn = document.createElement("button");
+          loadBtn.className = "btn";
+          loadBtn.textContent = "Load";
+          loadBtn.addEventListener("click", () => {
+            const ok = confirm("Load this encounter? This will replace the current roster.");
+            if (!ok) return;
+
+            state.encounter.name = se.name || "";
+            state.encounter.roster = (se.roster || []).map(x => ({
+              ...x,
+              encId: uid(),
+              curHp: x.maxHp,
+              conditions: [],
+              defeated: false
+            }));
+            state.encounter.turnIndex = 0;
+            state.encounter.status = "ready";
+
+            saveState();
+            render();
+          });
+
+          const dupBtn = document.createElement("button");
+          dupBtn.className = "btn ghost";
+          dupBtn.textContent = "Duplicate";
+          dupBtn.addEventListener("click", () => {
+            state.savedEncounters.push({
+              ...se,
+              id: uid(),
+              name: (se.name || "Encounter") + " (copy)",
+              updatedAt: new Date().toISOString()
+            });
+            saveState();
+            render();
+          });
+
+          const delBtn = document.createElement("button");
+          delBtn.className = "btn ghost";
+          delBtn.textContent = "Delete";
+          delBtn.addEventListener("click", () => {
+            const ok = confirm("Delete this saved encounter?");
+            if (!ok) return;
+            state.savedEncounters = state.savedEncounters.filter(e => e.id !== se.id);
+            saveState();
+            render();
+          });
+
+          actions.appendChild(loadBtn);
+          actions.appendChild(dupBtn);
+          actions.appendChild(delBtn);
+
+          row.appendChild(main);
+          row.appendChild(actions);
+          savedEncountersList.appendChild(row);
+        });
+    }
   }
 }
 
