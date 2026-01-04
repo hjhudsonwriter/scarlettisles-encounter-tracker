@@ -30,72 +30,73 @@
     <!-- LEFT: VAULT / STORAGE -->
     <aside class="panel vault">
       <div class="panelHead">
-        <h2>Storage</h2>
-        <p>Upload, import, and select combatants.</p>
-      </div>
+  <h2>Storage</h2>
+  <p>Upload, import, and select combatants.</p>
+</div>
 
-      <div class="tabs">
+<div class="tabs">
   <button class="tab active" data-tab="library">Library</button>
   <button class="tab" data-tab="encounters">Encounters</button>
   <button class="tab" data-tab="import">Import/Export</button>
 </div>
 
-      <div class="tabPanel active" id="tab-library">
-        <div class="sectionTitle">Add Combatant</div>
+<div class="tabPanel active" id="tab-library">
+  <div class="sectionTitle">Add Combatant</div>
 
-        <div class="row">
-          <div class="field grow">
-            <label>Name</label>
-            <input id="newName" placeholder="e.g. Dannick Vale" />
-          </div>
-        </div>
+  <div class="row">
+    <div class="field grow">
+      <label>Name</label>
+      <input id="newName" placeholder="e.g. Dannick Vale" />
+    </div>
+  </div>
 
-        <div class="row">
-          <div class="field">
-            <label>Type</label>
-            <select id="newType">
-              <option value="pc">PC</option>
-              <option value="monster">Monster</option>
-            </select>
-          </div>
+  <div class="row">
+    <div class="field">
+      <label>Type</label>
+      <select id="newType">
+        <option value="pc">PC</option>
+        <option value="monster">Monster</option>
+      </select>
+    </div>
 
-          <div class="field">
-            <label>Max HP</label>
-            <input id="newMaxHp" type="number" min="1" placeholder="45" />
-          </div>
-        </div>
+    <div class="field">
+      <label>Max HP</label>
+      <input id="newMaxHp" type="number" min="1" placeholder="45" />
+    </div>
+  </div>
 
-        <div class="row">
-          <div class="field grow">
-            <label>Init Bonus (optional)</label>
-            <input id="newInitBonus" type="number" step="1" placeholder="3" />
-          </div>
-        </div>
+  <div class="row">
+    <div class="field grow">
+      <label>Init Bonus (optional)</label>
+      <input id="newInitBonus" type="number" step="1" placeholder="3" />
+    </div>
+  </div>
 
-        <div class="row">
-          <div class="field grow">
-            <label>Avatar (optional)</label>
-            <input id="newAvatar" placeholder="Image URL (or leave blank)" />
-            <div class="hint">Tip: for best visuals, use square images.</div>
-          </div>
-        </div>
+  <div class="row">
+    <div class="field grow">
+      <label>Avatar (optional)</label>
+      <input id="newAvatar" placeholder="Image URL (or leave blank)" />
+      <div class="hint">Tip: for best visuals, use square images.</div>
+    </div>
+  </div>
 
-        <div class="row">
-          <button class="btn" id="btnAddToLibrary">Add to Library</button>
-        </div>
+  <div class="row">
+    <button class="btn" id="btnAddToLibrary">Add to Library</button>
+  </div>
 
-        <div class="row split">
-          <div class="pillRow">
-            <span class="pill" id="countPCs">PCs: 0</span>
-            <span class="pill" id="countMonsters">Monsters: 0</span>
-          </div>
-          <button class="btn ghost" id="btnAddSelected">Add Selected</button>
-        </div>
+  <div class="row split">
+    <div class="pillRow">
+      <span class="pill" id="countPCs">PCs: 0</span>
+      <span class="pill" id="countMonsters">Monsters: 0</span>
+    </div>
+    <button class="btn ghost" id="btnAddSelected">Add Selected</button>
+  </div>
 
-        <div class="sectionTitle">Saved Combatants</div>
-        <div class="list" id="libraryList"></div>
-      </div>
-      <div class="tabPanel" id="tab-encounters">
+  <div class="sectionTitle">Saved Combatants</div>
+  <div class="list" id="libraryList"></div>
+</div>
+
+<div class="tabPanel" id="tab-encounters">
   <div class="sectionTitle">Saved Encounters</div>
 
   <div class="subcard">
@@ -111,39 +112,39 @@
   <div class="list" id="savedEncountersList"></div>
 </div>
 
-      <div class="tabPanel" id="tab-import">
-        <div class="sectionTitle">Campaign Files</div>
+<div class="tabPanel" id="tab-import">
+  <div class="sectionTitle">Campaign Files</div>
 
-        <div class="subcard">
-          <h3>Import JSON</h3>
-          <p class="muted">Accepts a campaign file exported from this app.</p>
-          <input type="file" id="importJson" accept=".json,application/json" />
-          <div class="row">
-            <button class="btn" id="btnImportJson">Import Campaign JSON</button>
-          </div>
-        </div>
+  <div class="subcard">
+    <h3>Import JSON</h3>
+    <p class="muted">Accepts a campaign file exported from this app.</p>
+    <input type="file" id="importJson" accept=".json,application/json" />
+    <div class="row">
+      <button class="btn" id="btnImportJson">Import Campaign JSON</button>
+    </div>
+  </div>
 
-        <div class="subcard">
-          <h3>Export JSON</h3>
-          <p class="muted">Downloads a campaign file containing your library.</p>
-          <div class="row">
-            <button class="btn" id="btnExportJson">Export Campaign JSON</button>
-          </div>
-        </div>
+  <div class="subcard">
+    <h3>Export JSON</h3>
+    <p class="muted">Downloads a campaign file containing your library.</p>
+    <div class="row">
+      <button class="btn" id="btnExportJson">Export Campaign JSON</button>
+    </div>
+  </div>
 
-        <div class="subcard">
-          <h3>Import PDF (basic)</h3>
-          <p class="muted">
-            Extracts text from a PDF and attempts a naive parse (Name + HP). Use JSON for reliability.
-          </p>
-          <input type="file" id="importPdf" accept="application/pdf" />
-          <div class="row">
-            <button class="btn" id="btnImportPdf">Extract & Try Import</button>
-          </div>
-          <div class="hint" id="pdfStatus"></div>
-        </div>
-      </div>
-    </aside>
+  <div class="subcard">
+    <h3>Import PDF (basic)</h3>
+    <p class="muted">
+      Extracts text from a PDF and attempts a naive parse (Name + HP). Use JSON for reliability.
+    </p>
+    <input type="file" id="importPdf" accept="application/pdf" />
+    <div class="row">
+      <button class="btn" id="btnImportPdf">Extract & Try Import</button>
+    </div>
+    <div class="hint" id="pdfStatus"></div>
+  </div>
+</div>
+      </aside>
 
     <!-- CENTER: ENCOUNTER BOARD -->
     <section class="panel board">
