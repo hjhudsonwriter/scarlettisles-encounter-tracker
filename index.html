@@ -36,8 +36,9 @@
 
       <div class="tabs">
   <button class="tab active" data-tab="library">Library</button>
-        <div class="tabPanel" id="tab-encounters">
-  <div class="sectionTitle">Saved Encounters</div>
+  <button class="tab" data-tab="encounters">Encounters</button>
+  <button class="tab" data-tab="import">Import/Export</button>
+</div>
 
   <div class="subcard">
     <h3>Save current encounter</h3>
@@ -110,6 +111,21 @@
         <div class="sectionTitle">Saved Combatants</div>
         <div class="list" id="libraryList"></div>
       </div>
+      <div class="tabPanel" id="tab-encounters">
+  <div class="sectionTitle">Saved Encounters</div>
+
+  <div class="subcard">
+    <h3>Save current encounter</h3>
+    <p class="muted">Stores the current roster (and initiative values if rolled).</p>
+    <div class="row">
+      <button class="btn" id="btnSaveEncounter">Save Current Encounter</button>
+    </div>
+    <div class="hint">Tip: name your encounter in the center panel first.</div>
+  </div>
+
+  <div class="sectionTitle">Encounter List</div>
+  <div class="list" id="savedEncountersList"></div>
+</div>
 
       <div class="tabPanel" id="tab-import">
         <div class="sectionTitle">Campaign Files</div>
