@@ -411,7 +411,6 @@ row.appendChild(actions);
           savedEncountersList.appendChild(row);
         });
     }
-  }
 
 function normalizeEncounterAfterRosterChange() {
   const enc = state.encounter;
