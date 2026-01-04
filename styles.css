@@ -325,9 +325,12 @@ input:focus, select:focus{
 }
 .controlRow{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px}
 
+/* ===== Board (center) ===== */
+
+/* Header row: Avatar | Init | Name | HP | Conditions | Actions */
 .boardTableHead{
   display:grid;
-  grid-template-columns: 84px 1fr 120px 1.2fr;
+  grid-template-columns: 56px 84px 1fr 120px 1.2fr 110px;
   gap: 10px;
   padding: 10px 14px;
   font-family: var(--font);
@@ -342,25 +345,10 @@ input:focus, select:focus{
   padding: 10px 14px 14px 14px;
 }
 
-.boardFooter{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  padding: 12px 14px;
-  border-top: 1px solid var(--line);
-  background: rgba(246,239,226,.55);
-}
-
-.col{display:flex; align-items:center}
-.col.init{justify-content:flex-start}
-.col.hp{justify-content:flex-start}
-
-/* We reuse the .item markup for encounter rows,
-   but make it align like a board table row. */
+/* Encounter row layout: Avatar | Init | Name | HP | Conditions | Actions */
 .boardList .item{
   display:grid;
-  grid-template-columns: 84px 1fr 120px 1.2fr;
+  grid-template-columns: 56px 84px 1fr 120px 1.2fr 110px;
   gap: 10px;
   align-items:center;
   padding: 10px;
@@ -369,12 +357,61 @@ input:focus, select:focus{
   background: rgba(255,255,255,.72);
 }
 
-/* Hide the avatar on the central board to keep it clean,
-   but keep it in the DOM so JS doesn’t need to change. */
-.boardList .avatar{display:none}
+/* Show avatar on board */
+boardList .avatar{
+  display:block;
+  width:44px;height:44px;
+  border-radius: 14px;
+  object-fit: cover;
+  border:1px solid var(--line);
+  background: rgba(255,255,255,.75);
+}
 
-/* Make the “Remove” action less prominent on the board */
-.boardList .itemActions .btn{
+/* Replace stacked “card” layout inside board rows */
+.boardList .itemMain{
+  display: contents; /* lets children become grid items */
+}
+
+/* Make these look like compact cells */
+.boardCell{
+  font-family: var(--font);
+  font-weight: 800;
+}
+
+/* Name cell */
+.boardName{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+.boardName .nameText{
+  overflow:hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Conditions cell: keep tidy, wrap nicely without exploding height */
+.boardConds{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  align-items:center;
+  min-width:0;
+  max-height: 44px;       /* stops mega-tall rows */
+  overflow: hidden;       /* hides overflow if tons of conditions */
+}
+
+/* Actions cell */
+.boardActionsCell{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  white-space:nowrap;
+}
+
+/* Slightly smaller action buttons on board rows */
+.boardActionsCell .btn{
   padding: 8px 10px;
   border-radius: 12px;
 }
@@ -423,9 +460,6 @@ input:focus, select:focus{
   white-space: nowrap;
 }
 
-/* Optional polish: clamp badge rows so they don't balloon the card */
-.list .item .itemMeta {
-  overflow: hidden;
 }
 /* === Fix: keep badges tidy inside encounter cards === */
 .list .item .itemMeta{
