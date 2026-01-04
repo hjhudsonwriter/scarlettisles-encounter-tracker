@@ -270,42 +270,47 @@ function render() {
         ? c.conditions.map(x => `<span class="badge">${escapeHtml(x)}</span>`).join(" ")
         : `<span class="badge">No conditions</span>`;
 
-      main.innerHTML = `
-        <div class="itemTitle">
-          ${escapeHtml(c.name)}
-          ${c.defeated ? ` <span class="badge defeated">DEFEATED</span>` : ""}
-        </div>
-        <div class="itemMeta">
-          <span class="badge ${c.type}">${c.type.toUpperCase()}</span>
-          <span class="badge">Init: ${c.init ?? "—"}</span>
-          <span class="badge">HP: ${c.curHp}/${c.maxHp}</span>
-        </div>
-        <div class="itemMeta">${condText}</div>
-      `;
+      // --- NEW board-style row content ---
+main.innerHTML = `
+  <div class="boardCell">${c.init ?? "—"}</div>
 
-      const actions = document.createElement("div");
-      actions.className = "itemActions";
+  <div class="boardName">
+    <span class="nameText">${escapeHtml(c.name)}</span>
+    ${c.defeated ? `<span class="badge defeated">DEFEATED</span>` : ""}
+    <span class="badge ${c.type}">${c.type.toUpperCase()}</span>
+  </div>
 
-      const remove = document.createElement("button");
-      remove.className = "btn ghost";
-      remove.textContent = "Remove";
-      remove.disabled = (enc.status === "running");
-      remove.addEventListener("click", (e) => {
-        e.stopPropagation();
-        enc.roster = enc.roster.filter(x => x.encId !== c.encId);
-        normalizeEncounterAfterRosterChange();
-        saveState();
-        render();
-      });
+  <div class="boardCell">${c.curHp}/${c.maxHp}</div>
 
-      actions.appendChild(remove);
+  <div class="boardConds">
+    ${
+      (c.conditions && c.conditions.length)
+        ? c.conditions.map(x => `<span class="badge">${escapeHtml(x)}</span>`).join(" ")
+        : `<span class="badge">—</span>`
+    }
+  </div>
+`;
 
-      row.appendChild(img);
-      row.appendChild(main);
-      row.appendChild(actions);
-      encList.appendChild(row);
-    });
-  }
+const actions = document.createElement("div");
+actions.className = "boardActionsCell";
+
+const remove = document.createElement("button");
+remove.className = "btn ghost";
+remove.textContent = "Remove";
+remove.disabled = (enc.status === "running");
+remove.addEventListener("click", (e) => {
+  e.stopPropagation();
+  enc.roster = enc.roster.filter(x => x.encId !== c.encId);
+  normalizeEncounterAfterRosterChange();
+  saveState();
+  render();
+});
+
+actions.appendChild(remove);
+
+row.appendChild(img);
+row.appendChild(main);
+row.appendChild(actions);
 
   // target dropdown
   targetSelect.innerHTML = "";
