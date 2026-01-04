@@ -21,34 +21,53 @@ function saveState() {
 function loadState() {
   const raw = localStorage.getItem(STORAGE_KEY);
 
+  // Fresh install / empty storage
   if (!raw) {
     return {
-  library: [],
-  ...
-};
-  selectedLibraryIds: new Set(),
-  savedEncounters: [],
-  encounter: {
-    name: "",
-    status: "idle",
-    roster: [],
-    turnIndex: 0
-  }
-};
+      library: [],
+      selectedLibraryIds: new Set(),
+      savedEncounters: [],
+      encounter: {
+        name: "",
+        status: "idle",
+        roster: [],
+        turnIndex: 0
+      }
+    };
   }
 
-  const parsed = JSON.parse(raw);
-   
-   parsed.savedEncounters = Array.isArray(parsed.savedEncounters) ? parsed.savedEncounters : [];
+  // Existing saved state
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    console.warn("State JSON was corrupted; resetting.", e);
+    localStorage.removeItem(STORAGE_KEY);
+    return {
+      library: [],
+      selectedLibraryIds: new Set(),
+      savedEncounters: [],
+      encounter: {
+        name: "",
+        status: "idle",
+        roster: [],
+        turnIndex: 0
+      }
+    };
+  }
+
+  // Normalize fields
+  parsed.library = Array.isArray(parsed.library) ? parsed.library : [];
+  parsed.savedEncounters = Array.isArray(parsed.savedEncounters) ? parsed.savedEncounters : [];
 
   const ids = Array.isArray(parsed.selectedLibraryIds) ? parsed.selectedLibraryIds : [];
   parsed.selectedLibraryIds = new Set(ids);
 
-  parsed.library = Array.isArray(parsed.library) ? parsed.library : [];
   parsed.encounter = parsed.encounter || { name: "", status: "idle", roster: [], turnIndex: 0 };
   parsed.encounter.roster = Array.isArray(parsed.encounter.roster) ? parsed.encounter.roster : [];
   parsed.encounter.turnIndex = Number.isFinite(parsed.encounter.turnIndex) ? parsed.encounter.turnIndex : 0;
   parsed.encounter.status = parsed.encounter.status || "idle";
+  parsed.encounter.name = parsed.encounter.name || "";
 
   return parsed;
 }
