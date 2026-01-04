@@ -1,1 +1,394 @@
+/* ========= Fonts =========
+   Option A (recommended): upload Celandine .woff2 and enable @font-face below.
+   Option B: Google font fallback (Cinzel / Cinzel Decorative).
+*/
+
+/* Option B: Google Fonts fallback */
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Cinzel+Decorative:wght@400;700&display=swap");
+
+/* Option A: Celandine (uncomment and add file)
+/*
+@font-face{
+  font-family: "Celandine";
+  src: url("./assets/fonts/celandine.woff2") format("woff2");
+  font-weight: 400 800;
+  font-style: normal;
+  font-display: swap;
+}
+*/
+
+:root{
+  /* Palette: parchment whites + scarlet + gold */
+  --bg: #fbf7ef;
+  --paper: #fffaf1;
+  --paper2:#f6efe2;
+  --ink: #1f1a17;
+  --muted:#5c514a;
+
+  --scarlet:#7a0f1a;
+  --scarlet2:#a31625;
+  --gold:#c9a227;
+  --gold2:#e2c15a;
+
+  --line: rgba(31,26,23,.14);
+  --shadow: 0 16px 36px rgba(31,26,23,.12);
+  --radius: 18px;
+
+  --font: "Celandine", "Cinzel Decorative", "Cinzel", ui-serif, Georgia, serif;
+  --ui: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+
+body{
+  margin:0;
+  color:var(--ink);
+  background:
+    radial-gradient(900px 420px at 18% 0%, rgba(201,162,39,.14), transparent 60%),
+    radial-gradient(900px 420px at 90% 0%, rgba(122,15,26,.12), transparent 55%),
+    linear-gradient(180deg, #ffffff, var(--bg));
+  font-family: var(--ui);
+}
+
+/* ===== Topbar ===== */
+.topbar{
+  position: sticky;
+  top:0;
+  z-index: 10;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding: 14px 16px;
+  background: rgba(255,250,241,.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand{display:flex; align-items:center; gap:12px}
+.brandMark{
+  width:44px;height:44px;
+  display:grid;place-items:center;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(201,162,39,.20), rgba(122,15,26,.10));
+  border:1px solid rgba(122,15,26,.18);
+  box-shadow: var(--shadow);
+  font-size:20px;
+}
+.brandTitle{
+  font-family: var(--font);
+  font-weight: 800;
+  letter-spacing: .4px;
+}
+.brandSub{font-size:12px; color:var(--muted); margin-top:2px}
+.topbarActions{display:flex; gap:10px}
+
+/* ===== Layout Shell ===== */
+.shell{
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 14px;
+  display:grid;
+  grid-template-columns: 360px 1fr 360px;
+  gap: 14px;
+}
+
+@media (max-width: 1100px){
+  .shell{grid-template-columns: 1fr}
+}
+
+/* ===== Panels ===== */
+.panel{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.65), rgba(255,255,255,.35)),
+    var(--paper);
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  overflow:hidden;
+}
+
+.panelHead{
+  padding: 14px 14px 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background:
+    linear-gradient(90deg, rgba(122,15,26,.08), transparent 40%),
+    linear-gradient(90deg, rgba(201,162,39,.10), transparent 50%);
+}
+.panelHead h2{
+  margin:0 0 4px 0;
+  font-family: var(--font);
+  font-weight: 800;
+}
+.panelHead p{margin:0; color:var(--muted); font-size: 12px}
+
+.vault, .inspector{
+  position: relative;
+}
+.board{
+  position: relative;
+}
+
+/* ===== Tabs ===== */
+.tabs{
+  display:flex;
+  gap:8px;
+  padding: 10px 14px 0 14px;
+}
+.tab{
+  flex:1;
+  padding:10px 12px;
+  border-radius: 14px;
+  border:1px solid var(--line);
+  background: var(--paper2);
+  color: var(--muted);
+  font-family: var(--font);
+  font-weight: 700;
+  cursor:pointer;
+}
+.tab.active{
+  color: #fff;
+  background: linear-gradient(180deg, var(--scarlet2), var(--scarlet));
+  border-color: rgba(122,15,26,.25);
+}
+
+.tabPanel{display:none; padding: 12px 14px 14px 14px}
+.tabPanel.active{display:block}
+
+/* ===== Form fields ===== */
+.sectionTitle{
+  margin: 6px 0 10px 0;
+  font-family: var(--font);
+  font-weight: 800;
+  letter-spacing: .3px;
+  color: rgba(31,26,23,.8);
+}
+
+.row{display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-top:10px}
+.row.split{justify-content:space-between; align-items:center}
+
+.field{display:flex; flex-direction:column; gap:6px; min-width: 140px}
+.grow{flex:1}
+
+label{font-size:12px; color: var(--muted)}
+input, select{
+  width:100%;
+  padding: 10px 11px;
+  border-radius: 14px;
+  border:1px solid var(--line);
+  background: rgba(255,255,255,.85);
+  color: var(--ink);
+  outline:none;
+}
+input:focus, select:focus{
+  border-color: rgba(122,15,26,.35);
+  box-shadow: 0 0 0 3px rgba(201,162,39,.18);
+}
+
+.hint{margin-top:6px; font-size:12px; color:var(--muted)}
+.muted{color:var(--muted)}
+.tiny{font-size:12px}
+
+/* ===== Buttons ===== */
+.btn{
+  padding:10px 12px;
+  border-radius: 14px;
+  border:1px solid rgba(122,15,26,.28);
+  background: linear-gradient(180deg, rgba(201,162,39,.25), rgba(122,15,26,.12));
+  color: var(--ink);
+  font-weight: 800;
+  font-family: var(--font);
+  cursor:pointer;
+  transition: transform .05s ease, filter .15s ease;
+}
+.btn:hover{filter: brightness(1.03)}
+.btn:active{transform: translateY(1px)}
+.btn[disabled]{opacity:.5; cursor:not-allowed}
+
+.btn.ghost{
+  border:1px solid var(--line);
+  background: rgba(255,255,255,.65);
+  font-family: var(--font);
+}
+.btn.danger{
+  border:1px solid rgba(122,15,26,.35);
+  background: linear-gradient(180deg, rgba(163,22,37,.22), rgba(122,15,26,.18));
+  color: var(--scarlet);
+}
+
+/* ===== Pills & Badges ===== */
+.pillRow{display:flex; gap:8px; flex-wrap:wrap}
+.pill{
+  padding:6px 10px;
+  border-radius: 999px;
+  background: rgba(201,162,39,.16);
+  border:1px solid rgba(201,162,39,.28);
+  color: rgba(31,26,23,.82);
+  font-weight: 800;
+  font-size: 12px;
+  font-family: var(--font);
+}
+
+.badge{
+  font-size:11px;
+  padding:4px 8px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  color: rgba(31,26,23,.72);
+  background: rgba(255,255,255,.55);
+  font-family: var(--font);
+  font-weight: 700;
+}
+.badge.pc{
+  border-color: rgba(201,162,39,.35);
+  background: rgba(201,162,39,.14);
+}
+.badge.monster{
+  border-color: rgba(122,15,26,.30);
+  background: rgba(122,15,26,.10);
+}
+.badge.defeated{
+  border-color: rgba(122,15,26,.50);
+  background: rgba(122,15,26,.16);
+  color: var(--scarlet);
+}
+
+/* ===== Lists (library) ===== */
+.list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:10px;
+}
+
+.item{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  padding:10px;
+  border-radius: 16px;
+  border:1px solid var(--line);
+  background: rgba(255,255,255,.68);
+}
+.item:hover{border-color: rgba(122,15,26,.22)}
+.item.selected{
+  box-shadow: 0 0 0 3px rgba(201,162,39,.20);
+  border-color: rgba(201,162,39,.35);
+}
+
+.avatar{
+  width:44px;height:44px;
+  border-radius: 14px;
+  object-fit: cover;
+  border:1px solid var(--line);
+  background: rgba(255,255,255,.75);
+  flex: 0 0 auto;
+}
+
+.itemMain{flex:1}
+.itemTitle{
+  font-family: var(--font);
+  font-weight: 800;
+}
+.itemMeta{
+  font-size:12px;
+  color: var(--muted);
+  margin-top:3px;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.itemActions{display:flex; gap:8px}
+
+/* ===== Subcards ===== */
+.subcard{
+  padding:12px;
+  border-radius: 16px;
+  border:1px solid var(--line);
+  background: rgba(246,239,226,.55);
+  margin-top: 10px;
+}
+.subcard h3{
+  margin:0 0 6px 0;
+  font-family: var(--font);
+  font-weight: 800;
+}
+.subcard p{margin:0 0 10px 0}
+
+/* ===== Board (center) ===== */
+.boardActions{padding-left:10px}
+.encControls{
+  padding: 12px 14px 14px 14px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(201,162,39,.10), transparent);
+}
+.controlRow{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px}
+
+.boardTableHead{
+  display:grid;
+  grid-template-columns: 84px 1fr 120px 1.2fr;
+  gap: 10px;
+  padding: 10px 14px;
+  font-family: var(--font);
+  font-weight: 800;
+  letter-spacing: .3px;
+  color: rgba(31,26,23,.78);
+  background: rgba(246,239,226,.55);
+  border-bottom: 1px solid var(--line);
+}
+
+.boardList{
+  padding: 10px 14px 14px 14px;
+}
+
+.boardFooter{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+  background: rgba(246,239,226,.55);
+}
+
+.col{display:flex; align-items:center}
+.col.init{justify-content:flex-start}
+.col.hp{justify-content:flex-start}
+
+/* We reuse the .item markup for encounter rows,
+   but make it align like a board table row. */
+.boardList .item{
+  display:grid;
+  grid-template-columns: 84px 1fr 120px 1.2fr;
+  gap: 10px;
+  align-items:center;
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.72);
+}
+
+/* Hide the avatar on the central board to keep it clean,
+   but keep it in the DOM so JS doesn’t need to change. */
+.boardList .avatar{display:none}
+
+/* Make the “Remove” action less prominent on the board */
+.boardList .itemActions .btn{
+  padding: 8px 10px;
+  border-radius: 12px;
+}
+
+/* Current turn highlight */
+.currentTurn{
+  border-color: rgba(201,162,39,.55) !important;
+  box-shadow: 0 0 0 3px rgba(201,162,39,.22);
+  background: linear-gradient(180deg, rgba(201,162,39,.20), rgba(255,255,255,.75));
+}
+
+/* Defeated rows */
+.defeatedRow{
+  opacity: .75;
+  filter: grayscale(.2);
+}
 
