@@ -286,7 +286,7 @@ input:focus, select:focus{
   flex: 0 0 auto;
 }
 
-.itemMain{flex:1}
+.itemMain{flex:1; min-width:0;}
 .itemTitle{
   font-family: var(--font);
   font-weight: 800;
