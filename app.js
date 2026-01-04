@@ -412,7 +412,6 @@ row.appendChild(actions);
         });
     }
   }
-}
 
 function normalizeEncounterAfterRosterChange() {
   const enc = state.encounter;
