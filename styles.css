@@ -427,6 +427,13 @@ input:focus, select:focus{
 .list .item .itemMeta {
   overflow: hidden;
 }
+/* === Fix: keep badges tidy inside encounter cards === */
+.list .item .itemMeta{
+  flex-wrap: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 @media (max-width: 520px) {
   .list .item .itemActions .btn {
     padding: 8px 10px;     /* slightly smaller so 3 buttons fit */
