@@ -23,18 +23,21 @@ function loadState() {
 
   if (!raw) {
     return {
-      library: [],
-      selectedLibraryIds: new Set(),
-      encounter: {
-        name: "",
-        status: "idle", // idle | ready | running | paused | ended
-        roster: [],
-        turnIndex: 0
-      }
-    };
+  library: [],
+  selectedLibraryIds: new Set(),
+  savedEncounters: [],
+  encounter: {
+    name: "",
+    status: "idle",
+    roster: [],
+    turnIndex: 0
+  }
+};
   }
 
   const parsed = JSON.parse(raw);
+   
+   parsed.savedEncounters = Array.isArray(parsed.savedEncounters) ? parsed.savedEncounters : [];
 
   const ids = Array.isArray(parsed.selectedLibraryIds) ? parsed.selectedLibraryIds : [];
   parsed.selectedLibraryIds = new Set(ids);
@@ -88,6 +91,8 @@ const turnPill = el("turnPill");
 const targetSelect = el("targetSelect");
 
 const btnAddToLibrary = el("btnAddToLibrary");
+const btnSaveEncounter = el("btnSaveEncounter");
+const savedEncountersList = el("savedEncountersList");
 const btnAddSelected = el("btnAddSelected");
 const btnClearEncounter = el("btnClearEncounter");
 const btnAutoInit = el("btnAutoInit");
@@ -643,4 +648,38 @@ if ("serviceWorker" in navigator) {
 }
 
 /* ---------- Boot ---------- */
+if (btnSaveEncounter) {
+  btnSaveEncounter.addEventListener("click", () => {
+    const enc = state.encounter;
+
+    if (!enc.roster || enc.roster.length === 0) {
+      alert("Add combatants to the encounter first, then save.");
+      return;
+    }
+
+    const name = (enc.name || "").trim() || `Encounter ${state.savedEncounters.length + 1}`;
+
+    const snapshot = {
+      id: uid(),
+      name,
+      updatedAt: new Date().toISOString(),
+      roster: enc.roster.map(c => ({
+        baseId: c.baseId || null,
+        name: c.name,
+        type: c.type,
+        maxHp: c.maxHp,
+        curHp: c.maxHp,        // reset HP on load
+        init: c.init ?? null,  // keep initiative if rolled
+        avatar: c.avatar || "",
+        conditions: [],
+        defeated: false
+      }))
+    };
+
+    state.savedEncounters.push(snapshot);
+    saveState();
+    render();
+    alert(`Saved: ${name}`);
+  });
+}
 render();
