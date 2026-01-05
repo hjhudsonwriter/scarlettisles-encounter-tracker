@@ -242,75 +242,79 @@ function render() {
   }
 
   // encounter list
-  encList.innerHTML = "";
-  if (enc.roster.length === 0) {
-    encList.innerHTML = `<div class="hint">No one in the encounter yet. Select from Storage and add them.</div>`;
-  } else {
-    enc.roster.forEach((c, idx) => {
-      const row = document.createElement("div");
-      const isCurrent = (enc.status === "running" && idx === enc.turnIndex);
-      row.className = "item" +
-        (isCurrent ? " currentTurn" : "") +
-        (c.defeated ? " defeatedRow" : "");
+encList.innerHTML = "";
+if (enc.roster.length === 0) {
+  encList.innerHTML = `<div class="hint">No one in the encounter yet. Select from Storage and add them.</div>`;
+} else {
+  enc.roster.forEach((c, idx) => {
+    const row = document.createElement("div");
+    const isCurrent = (enc.status === "running" && idx === enc.turnIndex);
+    row.className = "item" +
+      (isCurrent ? " currentTurn" : "") +
+      (c.defeated ? " defeatedRow" : "");
 
-      row.addEventListener("click", () => {
-        targetSelect.value = c.encId;
-      });
+    row.addEventListener("click", () => {
+      targetSelect.value = c.encId;
+    });
 
-      const img = document.createElement("img");
-      img.className = "avatar";
-      img.alt = c.name;
-      img.src = c.avatar || defaultAvatar(c.type);
-      img.onerror = () => img.src = defaultAvatar(c.type);
+    // Avatar (this is your first column)
+    const img = document.createElement("img");
+    img.className = "avatar";
+    img.alt = c.name;
+    img.src = c.avatar || defaultAvatar(c.type);
+    img.onerror = () => img.src = defaultAvatar(c.type);
 
-      const main = document.createElement("div");
-      main.className = "itemMain";
+    // Main cells (Init | Name | HP | Conditions)
+    const main = document.createElement("div");
+    main.className = "itemMain";
 
-      const condText = (c.conditions && c.conditions.length)
-        ? c.conditions.map(x => `<span class="badge">${escapeHtml(x)}</span>`).join(" ")
-        : `<span class="badge">No conditions</span>`;
+    main.innerHTML = `
+      <div class="boardCell">${c.init ?? "—"}</div>
 
-      // --- NEW board-style row content ---
-main.innerHTML = `
-  <div class="boardCell">${c.init ?? "—"}</div>
+      <div class="boardName">
+        <span class="nameText">${escapeHtml(c.name)}</span>
+        ${c.defeated ? `<span class="badge defeated">DEFEATED</span>` : ""}
+        <span class="badge ${c.type}">${c.type.toUpperCase()}</span>
+      </div>
 
-  <div class="boardName">
-    <span class="nameText">${escapeHtml(c.name)}</span>
-    ${c.defeated ? `<span class="badge defeated">DEFEATED</span>` : ""}
-    <span class="badge ${c.type}">${c.type.toUpperCase()}</span>
-  </div>
+      <div class="boardCell">${c.curHp}/${c.maxHp}</div>
 
-  <div class="boardCell">${c.curHp}/${c.maxHp}</div>
+      <div class="boardConds">
+        ${
+          (c.conditions && c.conditions.length)
+            ? c.conditions.map(x => `<span class="badge">${escapeHtml(x)}</span>`).join(" ")
+            : `<span class="badge">—</span>`
+        }
+      </div>
+    `;
 
-  <div class="boardConds">
-    ${
-      (c.conditions && c.conditions.length)
-        ? c.conditions.map(x => `<span class="badge">${escapeHtml(x)}</span>`).join(" ")
-        : `<span class="badge">—</span>`
-    }
-  </div>
-`;
+    // Actions column (Remove)
+    const actions = document.createElement("div");
+    actions.className = "boardActionsCell";
 
-const actions = document.createElement("div");
-actions.className = "boardActionsCell";
+    const remove = document.createElement("button");
+    remove.className = "btn ghost";
+    remove.textContent = "Remove";
+    remove.disabled = (enc.status === "running");
+    remove.addEventListener("click", (e) => {
+      e.stopPropagation();
+      enc.roster = enc.roster.filter(x => x.encId !== c.encId);
+      normalizeEncounterAfterRosterChange();
+      saveState();
+      render();
+    });
 
-const remove = document.createElement("button");
-remove.className = "btn ghost";
-remove.textContent = "Remove";
-remove.disabled = (enc.status === "running");
-remove.addEventListener("click", (e) => {
-  e.stopPropagation();
-  enc.roster = enc.roster.filter(x => x.encId !== c.encId);
-  normalizeEncounterAfterRosterChange();
-  saveState();
-  render();
-});
+    actions.appendChild(remove);
 
-actions.appendChild(remove);
+    // Put all 6 columns into the row
+    row.appendChild(img);
+    row.appendChild(main);
+    row.appendChild(actions);
 
-row.appendChild(img);
-row.appendChild(main);
-row.appendChild(actions);
+    // IMPORTANT: actually insert the row into the DOM
+    encList.appendChild(row);
+  });
+}
 
   // target dropdown
   targetSelect.innerHTML = "";
@@ -411,12 +415,8 @@ row.appendChild(actions);
           savedEncountersList.appendChild(row);
         });
     }
-
-function normalizeEncounterAfterRosterChange() {
-  const enc = state.encounter;
-  enc.turnIndex = clamp(enc.turnIndex, 0, Math.max(0, enc.roster.length - 1));
-  if (enc.roster.length === 0) enc.status = "idle";
-}
+  }
+} // ✅ closes render()
 
 /* ---------- Library actions ---------- */
 btnAddToLibrary.addEventListener("click", () => {
@@ -601,6 +601,12 @@ function applyDamageAndConditions(conditionOnly) {
   saveState();
   render();
   checkAutoEnd();
+   }   // closes applyDamageAndConditions
+
+function normalizeEncounterAfterRosterChange() {
+  const enc = state.encounter;
+  enc.turnIndex = clamp(enc.turnIndex, 0, Math.max(0, enc.roster.length - 1));
+  if (enc.roster.length === 0) enc.status = "idle";
 }
 
 function checkAutoEnd() {
