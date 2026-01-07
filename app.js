@@ -139,6 +139,7 @@ const inspectorMeta = el("inspectorMeta");
 const inspectorStats = el("inspectorStats");
 const inspectorHp = el("inspectorHp");
 const inspectorConds = el("inspectorConds");
+const momentumText = el("momentumText");
 
 function tickDownConditionsForCombatant(combatant) {
   if (!combatant || !Array.isArray(combatant.conditions)) return;
@@ -242,6 +243,17 @@ function render() {
 
   encStatus.textContent = statusText;
 
+   // Round & Momentum
+if (momentumText) {
+  const total = enc.roster.length;
+  const monstersLeft = enc.roster.filter(x => x.type === "monster" && !x.defeated && x.curHp > 0).length;
+
+  momentumText.textContent =
+    total === 0
+      ? "Add combatants to begin tracking."
+      : `Combatants: ${total} • Monsters left: ${monstersLeft}`;
+}
+
   // button enablement
   btnPause.disabled = !(enc.status === "running");
   btnEnd.disabled = !(enc.status === "running" || enc.status === "paused");
@@ -249,22 +261,19 @@ function render() {
   btnAutoInit.disabled = !(enc.roster.length > 0) || (enc.status === "running");
   if (btnCompleteTurn) btnCompleteTurn.disabled = !(enc.status === "running");
    if (btnCompleteTurn) {
+  if (btnCompleteTurn) {
   btnCompleteTurn.addEventListener("click", () => {
     const enc = state.encounter;
     if (enc.status !== "running") return;
 
-    // Force target to current combatant (keeps things simple)
-    const current = enc.roster[enc.turnIndex];
-    if (!current) return;
-    targetSelect.value = current.encId;
-
-    // Apply damage + condition (uses your existing function)
+    // 1) Apply damage/heal + optional condition to the SELECTED target
     applyDamageAndConditions(false);
 
-    // Tick conditions for the combatant who just finished their turn
-    tickDownConditionsForCombatant(current);
+    // 2) Tick down conditions for the combatant whose turn just ended
+    const ended = enc.roster[enc.turnIndex];
+    tickDownConditionsForCombatant(ended);
 
-    // Advance turn
+    // 3) Move to next living combatant
     enc.turnIndex = findNextLivingIndex(enc, enc.turnIndex + 1);
 
     saveState();
@@ -612,17 +621,6 @@ btnEnd.addEventListener("click", () => {
   render();
 });
 
-btnNextTurn.addEventListener("click", () => {
-  const enc = state.encounter;
-   const btnNextTurn = el("btnNextTurn");
-  if (enc.status !== "running") return;
-
-  enc.turnIndex = findNextLivingIndex(enc, enc.turnIndex + 1);
-  saveState();
-  render();
-  checkAutoEnd();
-});
-
 function findNextLivingIndex(enc, startIndex) {
   if (enc.roster.length === 0) return 0;
 
@@ -652,8 +650,7 @@ if (momentumText) {
 }
 
 /* ---------- Damage + Conditions ---------- */
-btnApplyDamage.addEventListener("click", () => applyDamageAndConditions(false));
-btnAddCondition.addEventListener("click", () => applyDamageAndConditions(true));
+if (btnAddCondition) btnAddCondition.addEventListener("click", () => applyDamageAndConditions(true));
 
 function applyDamageAndConditions(conditionOnly) {
   const enc = state.encounter;
