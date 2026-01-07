@@ -255,14 +255,9 @@ if (momentumText) {
 }
 
   // button enablement
-  btnPause.disabled = !(enc.status === "running");
-  btnEnd.disabled = !(enc.status === "running" || enc.status === "paused");
-  btnBegin.disabled = !(enc.roster.length > 0) || (enc.status === "running");
-  btnAutoInit.disabled = !(enc.roster.length > 0) || (enc.status === "running");
+
   if (btnCompleteTurn) btnCompleteTurn.disabled = !(enc.status === "running");
-   if (btnCompleteTurn) {
-  if (btnCompleteTurn) {
-  btnCompleteTurn.addEventListener("click", () => {
+   
     const enc = state.encounter;
     if (enc.status !== "running") return;
 
@@ -632,9 +627,7 @@ function findNextLivingIndex(enc, startIndex) {
   }
   return 0;
 }
-const momentumText = el("momentumText");
-if (momentumText) {
-  const total = enc.roster.length;
+
   const monstersLeft = enc.roster.filter(x => x.type === "monster" && !x.defeated && x.curHp > 0).length;
 
   // Simple round estimate: every time turnIndex wraps to 0, it's a new round.
@@ -703,7 +696,8 @@ if (cond) {
   saveState();
   render();
   checkAutoEnd();
-   }   // closes applyDamageAndConditions
+   } // end function applyDamageAndConditions
+
 
 function normalizeEncounterAfterRosterChange() {
   const enc = state.encounter;
