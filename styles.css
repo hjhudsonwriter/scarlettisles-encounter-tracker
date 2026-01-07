@@ -349,20 +349,11 @@ input:focus, select:focus{
 .subcard p{margin:0 0 10px 0}
 
 /* ===== Board (center) ===== */
-.boardActions{padding-left:10px}
-.encControls{
-  padding: 12px 14px 14px 14px;
-  border-bottom: 1px solid var(--line);
-  background: linear-gradient(180deg, rgba(201,162,39,.10), transparent);
-}
-.controlRow{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px}
-
-/* ===== Board (center) ===== */
 
 /* Header row: Avatar | Init | Name | HP | Conditions | Actions */
 .boardTableHead{
   display:grid;
-  grid-template-columns: 56px 84px 1fr 120px 1.2fr 110px;
+  grid-template-columns: 56px 84px minmax(240px, 1fr) 120px minmax(220px, 1fr) 110px;
   gap: 10px;
   padding: 10px 14px;
   font-family: var(--font);
@@ -377,10 +368,10 @@ input:focus, select:focus{
   padding: 10px 14px 14px 14px;
 }
 
-/* Encounter row layout: Avatar | Init | Name | HP | Conditions | Actions */
+/* Encounter row: Avatar | Init | Name | HP | Conditions | Actions */
 .boardList .item{
   display:grid;
-  grid-template-columns: 56px 84px 1fr 120px 1.2fr 110px;
+  grid-template-columns: 56px 84px minmax(240px, 1fr) 120px minmax(220px, 1fr) 110px;
   gap: 10px;
   align-items:center;
   padding: 10px;
@@ -389,22 +380,22 @@ input:focus, select:focus{
   background: rgba(255,255,255,.72);
 }
 
-/* Show avatar on board */
-boardList .avatar{
-  display:block;
-  width:44px;height:44px;
+/* Avatar in rows */
+.boardList .avatar{
+  width:44px;
+  height:44px;
   border-radius: 14px;
   object-fit: cover;
   border:1px solid var(--line);
   background: rgba(255,255,255,.75);
 }
 
-/* Replace stacked “card” layout inside board rows */
+/* Make itemMain NOT interfere with grid layout */
 .boardList .itemMain{
-  display: contents; /* lets children become grid items */
+  display: contents; /* OK here because the children become the grid cells */
 }
 
-/* Make these look like compact cells */
+/* Init + HP cells */
 .boardCell{
   font-family: var(--font);
   font-weight: 800;
@@ -417,21 +408,23 @@ boardList .avatar{
   gap:8px;
   min-width:0;
 }
+
 .boardName .nameText{
-  overflow:hidden;
-  text-overflow: ellipsis;
+  min-width:0;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Conditions cell: keep tidy, wrap nicely without exploding height */
+/* Conditions cell */
 .boardConds{
   display:flex;
   flex-wrap:wrap;
   gap:6px;
   align-items:center;
   min-width:0;
-  max-height: 44px;       /* stops mega-tall rows */
-  overflow: hidden;       /* hides overflow if tons of conditions */
+  max-height: 44px;
+  overflow: hidden;
 }
 
 /* Actions cell */
@@ -442,7 +435,6 @@ boardList .avatar{
   white-space:nowrap;
 }
 
-/* Slightly smaller action buttons on board rows */
 .boardActionsCell .btn{
   padding: 8px 10px;
   border-radius: 12px;
@@ -459,210 +451,4 @@ boardList .avatar{
 .defeatedRow{
   opacity: .75;
   filter: grayscale(.2);
-}
-/* === Fix: keep encounter row buttons aligned + never spill === */
-.list .item {
-  justify-content: space-between;
-}
-
-.list .item .itemMain {
-  flex: 1 1 auto;
-  min-width: 0; /* IMPORTANT: allows the left side to shrink instead of pushing buttons out */
-}
-
-.list .item .itemActions {
-  flex: 0 0 auto;
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: nowrap;       /* keep buttons on one line */
-  white-space: nowrap;     /* keep button text on one line */
-}
-
-.list .item .itemActions .btn {
-  flex: 0 0 auto;
-  white-space: nowrap;
-}
-
-/* --- Board: make names readable --- */
-.boardList .item {
-  align-items: center;
-}
-
-.boardList .itemMain {
-  display: grid;
-  grid-template-columns: 70px minmax(180px, 1fr) 110px minmax(180px, 1fr);
-  gap: 12px;
-  align-items: center;
-}
-
-/* let the name wrap instead of truncating */
-.boardName .nameText {
-  white-space: normal;
-  overflow: visible;
-  text-overflow: unset;
-  display: inline;
-  line-height: 1.1;
-}
-
-/* --- Saved encounters list: stop overlap --- */
-#savedEncountersList .item {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 12px;
-  align-items: center;
-}
-
-#savedEncountersList .itemMain .itemMeta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-#savedEncountersList .itemActions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-/* if your CSS currently forces ellipsis somewhere, this helps override */
-.boardName {
-  min-width: 0;
-}
-/* Optional polish: prevent long encounter names from shoving buttons offscreen */
-.list .item .itemTitle {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-}
-/* === Fix: keep badges tidy inside encounter cards === */
-.list .item .itemMeta{
-  flex-wrap: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-@media (max-width: 520px) {
-  .list .item .itemActions .btn {
-    padding: 8px 10px;     /* slightly smaller so 3 buttons fit */
-    border-radius: 12px;
-    font-size: 14px;       /* keeps your font readable but tighter */
-  }
-   #btnSaveEncounter {
-  outline: 3px solid red !important;
-  position: relative !important;
-  z-index: 9999 !important;
-}
-   /* ===== Fix Saved Encounters overlap ===== */
-
-#savedEncountersList .item {
-  display: grid !important;
-  grid-template-columns: 1fr auto !important;
-  gap: 12px !important;
-  align-items: start !important;
-}
-
-#savedEncountersList .itemMain {
-  min-width: 0 !important; /* allows text to wrap instead of overflow */
-}
-
-#savedEncountersList .itemTitle {
-  white-space: normal !important;
-  overflow: visible !important;
-  text-overflow: unset !important;
-}
-
-#savedEncountersList .itemMeta {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 8px !important;
-  align-items: center !important;
-}
-
-#savedEncountersList .itemActions {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 8px !important;
-  justify-content: flex-end !important;
-  align-items: center !important;
-}
-
-/* Make sure badges/pills don't become floating landmines */
-#savedEncountersList .badge,
-#savedEncountersList .pill {
-  position: static !important;
-  margin: 0 !important;
-  max-width: 100% !important;
-}
-
-   /* ===== Fix center board name cutoff ===== */
-
-.boardList .itemMain {
-  display: grid !important;
-  grid-template-columns: 70px minmax(260px, 1fr) 120px minmax(220px, 1fr) !important;
-  gap: 12px !important;
-  align-items: center !important;
-  min-width: 0 !important;
-}
-
-.boardName {
-  min-width: 0 !important;
-}
-
-.boardName .nameText {
-  white-space: normal !important;
-  overflow: visible !important;
-  text-overflow: unset !important;
-  word-break: break-word !important;
-}
-
-   /* ===== Centre panel row layout fix (stops REMOVE overlapping text) ===== */
-
-.boardList .item {
-  display: flex !important;
-  align-items: center !important;
-  gap: 14px !important;
-}
-
-.boardList .item .avatar {
-  flex: 0 0 auto !important;
-}
-
-.boardList .itemMain {
-  flex: 1 1 auto !important;
-  min-width: 0 !important; /* allows text to wrap instead of pushing under REMOVE */
-}
-
-.boardList .boardActionsCell {
-  flex: 0 0 auto !important;
-  position: static !important; /* kills any absolute/overlay behaviour */
-  z-index: 1 !important;
-}
-
-/* Make sure the inner 4 columns (Init | Name | HP | Conditions) behave */
-.boardList .itemMain {
-  display: grid !important;
-  grid-template-columns: 70px minmax(240px, 1fr) 120px minmax(220px, 1fr) !important;
-  gap: 12px !important;
-  align-items: center !important;
-}
-
-.boardName {
-  min-width: 0 !important;
-}
-
-.boardName .nameText {
-  white-space: normal !important;
-  overflow: visible !important;
-  text-overflow: unset !important;
-  word-break: break-word !important;
-}
-
-/* Keep the REMOVE button tidy */
-.boardActionsCell .btn {
-  white-space: nowrap !important;
 }
