@@ -102,6 +102,26 @@ function loadState() {
 
 const state = loadState();
 
+let editingLibraryId = null;
+
+function setAddFormFromCombatant(c) {
+  el("newName").value = c.name || "";
+  el("newType").value = c.type || "pc";
+  el("newMaxHp").value = c.maxHp ?? "";
+  el("newInitBonus").value = (c.initBonus ?? "");
+  el("newAvatar").value = c.avatar || "";
+}
+
+function resetAddForm() {
+  editingLibraryId = null;
+  el("newName").value = "";
+  el("newMaxHp").value = "";
+  el("newInitBonus").value = "";
+  el("newAvatar").value = "";
+  btnAddToLibrary.textContent = "Add to Library";
+  if (btnCancelEdit) btnCancelEdit.hidden = true;
+}
+
 function saveState() {
   const toSave = {
     ...state,
@@ -119,6 +139,7 @@ const turnPill = el("turnPill");
 const targetSelect = el("targetSelect");
 
 const btnAddToLibrary = el("btnAddToLibrary");
+const btnCancelEdit = el("btnCancelEdit");
 const btnAddSelected = el("btnAddSelected");
 const btnClearEncounter = el("btnClearEncounter");
 const btnAutoInit = el("btnAutoInit");
@@ -339,12 +360,22 @@ function render() {
       .forEach(item => {
         const row = document.createElement("div");
         row.className = "item" + (state.selectedLibraryIds.has(item.id) ? " selected" : "");
-        row.addEventListener("click", () => {
-          if (state.selectedLibraryIds.has(item.id)) state.selectedLibraryIds.delete(item.id);
-          else state.selectedLibraryIds.add(item.id);
-          saveState();
-          render();
-        });
+        row.addEventListener("click", (e) => {
+  // SHIFT + click = edit
+  if (e.shiftKey) {
+    editingLibraryId = item.id;
+    setAddFormFromCombatant(item);
+    btnAddToLibrary.textContent = "Save Changes";
+    if (btnCancelEdit) btnCancelEdit.hidden = false;
+    return;
+  }
+
+  // normal click = select/deselect
+  if (state.selectedLibraryIds.has(item.id)) state.selectedLibraryIds.delete(item.id);
+  else state.selectedLibraryIds.add(item.id);
+  saveState();
+  render();
+});
 
         const img = document.createElement("img");
         img.className = "avatar";
@@ -609,7 +640,7 @@ el("encName")?.addEventListener("input", (e) => {
   saveState();
 });
 
-btnAddToLibrary?.addEventListener("click", () => {
+btnAddToLibrary.addEventListener("click", () => {
   const name = el("newName").value.trim();
   const type = el("newType").value;
   const maxHp = Number(el("newMaxHp").value);
@@ -623,6 +654,41 @@ btnAddToLibrary?.addEventListener("click", () => {
 
   const initBonus = initBonusRaw === "" ? null : Number(initBonusRaw);
 
+  if (editingLibraryId) {
+    // SAVE CHANGES
+    const existing = state.library.find(x => x.id === editingLibraryId);
+    if (!existing) {
+      resetAddForm();
+      return;
+    }
+
+    existing.name = name;
+    existing.type = type;
+    existing.maxHp = Math.floor(maxHp);
+    existing.curHp = Math.min(existing.curHp ?? existing.maxHp, existing.maxHp);
+    existing.initBonus = (initBonusRaw === "" || !Number.isFinite(initBonus)) ? null : Math.floor(initBonus);
+    existing.avatar = avatar || "";
+
+    // Also update any encounter roster entries that were created from this base combatant
+    state.encounter.roster.forEach(r => {
+      if (r.baseId === existing.id) {
+        const suffixMatch = String(r.name).match(/\s([a-z])$/i);
+const suffix = suffixMatch ? ` ${suffixMatch[1]}` : "";
+r.name = `${existing.name}${suffix}`;
+        r.type = existing.type;
+        r.maxHp = existing.maxHp;
+        r.avatar = existing.avatar || "";
+        r.curHp = Math.min(r.curHp, r.maxHp);
+      }
+    });
+
+    saveState();
+    render();
+    resetAddForm();
+    return;
+  }
+
+  // ADD NEW
   state.library.push({
     id: uid(),
     name,
@@ -633,14 +699,14 @@ btnAddToLibrary?.addEventListener("click", () => {
     avatar: avatar || ""
   });
 
-  el("newName").value = "";
-  el("newMaxHp").value = "";
-  el("newInitBonus").value = "";
-  el("newAvatar").value = "";
-
   saveState();
   render();
+  resetAddForm();
 });
+
+if (btnCancelEdit) {
+  btnCancelEdit.addEventListener("click", () => resetAddForm());
+}
 
 btnAddSelected?.addEventListener("click", () => {
   const ids = Array.from(state.selectedLibraryIds);
@@ -652,22 +718,26 @@ btnAddSelected?.addEventListener("click", () => {
   const enc = state.encounter;
 
   ids.forEach(id => {
-    const base = state.library.find(x => x.id === id);
-    if (!base) return;
+  const base = state.library.find(x => x.id === id);
+  if (!base) return;
 
-    enc.roster.push({
-      encId: uid(),
-      baseId: base.id,
-      name: base.name,
-      type: base.type,
-      maxHp: base.maxHp,
-      curHp: base.maxHp,
-      init: null,
-      avatar: base.avatar || "",
-      conditions: [],
-      defeated: false
-    });
+  const sameCount = enc.roster.filter(r => r.baseId === base.id).length;
+  const suffix = sameCount === 0 ? "" : ` ${String.fromCharCode(96 + sameCount)}`;
+  const displayName = `${base.name}${suffix}`;
+
+  enc.roster.push({
+    encId: uid(),
+    baseId: base.id,
+    name: displayName,
+    type: base.type,
+    maxHp: base.maxHp,
+    curHp: base.maxHp,
+    init: null,
+    avatar: base.avatar || "",
+    conditions: [],
+    defeated: false
   });
+});
 
   enc.status = "ready";
   enc.turnIndex = 0;
