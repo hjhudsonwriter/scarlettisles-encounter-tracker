@@ -134,6 +134,13 @@ const damageInput = el("damageInput");
 const conditionInput = el("conditionInput");
 const pdfStatus = el("pdfStatus");
 
+const inspectorAvatar = el("inspectorAvatar");
+const inspectorName = el("inspectorName");
+const inspectorMeta = el("inspectorMeta");
+const inspectorStats = el("inspectorStats");
+const inspectorHp = el("inspectorHp");
+const inspectorConds = el("inspectorConds");
+
 function tickDownConditionsForCombatant(combatant) {
   if (!combatant || !Array.isArray(combatant.conditions)) return;
 
@@ -252,6 +259,33 @@ function render() {
     const current = enc.roster[enc.turnIndex];
     turnPill.textContent = current ? `${current.name} (Init ${current.init})` : "—";
   }
+
+   const current = (enc.status === "running" && enc.roster.length > 0) ? enc.roster[enc.turnIndex] : null;
+
+if (!current) {
+  if (inspectorName) inspectorName.textContent = "No active turn";
+  if (inspectorMeta) inspectorMeta.textContent = "Start an encounter to see the active combatant.";
+  if (inspectorAvatar) inspectorAvatar.src = defaultAvatar("pc");
+  if (inspectorStats) inspectorStats.hidden = true;
+} else {
+  if (inspectorName) inspectorName.textContent = current.name;
+  if (inspectorMeta) inspectorMeta.textContent = `${current.type.toUpperCase()} • Init ${current.init ?? "—"}`;
+  if (inspectorAvatar) {
+    inspectorAvatar.src = current.avatar || defaultAvatar(current.type);
+    inspectorAvatar.onerror = () => inspectorAvatar.src = defaultAvatar(current.type);
+  }
+  if (inspectorStats) inspectorStats.hidden = false;
+  if (inspectorHp) inspectorHp.textContent = `HP: ${current.curHp}/${current.maxHp}`;
+
+  const condHtml = (current.conditions && current.conditions.length)
+    ? current.conditions.map(x => {
+        if (typeof x === "string") return `<span class="badge">${escapeHtml(x)}</span>`;
+        return `<span class="badge">${escapeHtml(x.name)} (${x.remaining})</span>`;
+      }).join(" ")
+    : `<span class="badge">—</span>`;
+
+  if (inspectorConds) inspectorConds.innerHTML = condHtml;
+}
 
   // encounter list
 encList.innerHTML = "";
