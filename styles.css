@@ -472,3 +472,10 @@ body::before {
   pointer-events: none;
   z-index: -1;
 }
+
+.boardList .item{
+  display:grid;
+  grid-template-columns: 56px 84px 1fr 120px 1.2fr 110px;
+  gap:10px;
+  align-items:center;
+}
