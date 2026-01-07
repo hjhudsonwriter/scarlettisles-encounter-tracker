@@ -453,6 +453,31 @@ boardList .avatar{
   white-space: nowrap;
 }
 
+/* --- Board: make names readable --- */
+.boardList .item {
+  align-items: center;
+}
+
+.boardList .itemMain {
+  display: grid;
+  grid-template-columns: 70px minmax(180px, 1fr) 110px minmax(180px, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+/* let the name wrap instead of truncating */
+.boardName .nameText {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  display: inline;
+  line-height: 1.1;
+}
+
+/* if your CSS currently forces ellipsis somewhere, this helps override */
+.boardName {
+  min-width: 0;
+}
 /* Optional polish: prevent long encounter names from shoving buttons offscreen */
 .list .item .itemTitle {
   overflow: hidden;
