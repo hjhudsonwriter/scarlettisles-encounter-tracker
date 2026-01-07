@@ -3,56 +3,14 @@ const MAP_KEY = "encounterTracker.vtt.mapImage";
 
 const el = (id) => document.getElementById(id);
 
-const MAP_STORAGE_KEY = "encounterTracker.vtt.mapImage";
+const mapUpload = el("mapUpload");
+const mapImage = el("mapImage");
+const btnClearMap = el("btnClearMap");
+const tokenLayer = el("tokenLayer");
+const statusEl = el("vttStatus");
+const tokenList = el("vttTokenList");
 
-const mapUpload = document.getElementById("mapUpload");
-const mapImage = document.getElementById("mapImage");
-const btnClearMap = document.getElementById("btnClearMap");
-
-// Restore saved map (if any)
-(function restoreMap() {
-  const saved = localStorage.getItem(MAP_STORAGE_KEY);
-  if (saved) {
-    mapImage.src = saved;
-    mapImage.style.display = "block";
-  } else {
-    mapImage.removeAttribute("src");
-    mapImage.style.display = "none";
-  }
-})();
-
-// Upload new map
-mapUpload?.addEventListener("change", () => {
-  const file = mapUpload.files && mapUpload.files[0];
-  if (!file) return;
-
-  // Optional guard: stop huge images breaking storage
-  if (file.size > 4 * 1024 * 1024) {
-    alert("That image is quite large. Try a smaller JPG/PNG (under ~4MB).");
-    mapUpload.value = "";
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = () => {
-    const dataUrl = String(reader.result || "");
-    localStorage.setItem(MAP_STORAGE_KEY, dataUrl);
-    mapImage.src = dataUrl;
-    mapImage.style.display = "block";
-  };
-  reader.readAsDataURL(file);
-
-  // allow re-uploading the same file later
-  mapUpload.value = "";
-});
-
-// Clear map
-btnClearMap?.addEventListener("click", () => {
-  localStorage.removeItem(MAP_STORAGE_KEY);
-  mapImage.removeAttribute("src");
-  mapImage.style.display = "none";
-});
-
+/* ---------- Helpers ---------- */
 function defaultAvatar(type) {
   const fill = type === "pc" ? "#c9a227" : "#7a0f1a";
   const svg = encodeURIComponent(`
@@ -80,79 +38,7 @@ function saveMap(dataUrl) {
   else localStorage.removeItem(MAP_KEY);
 }
 
-const mapUpload = el("mapUpload");
-const btnClearMap = el("btnClearMap");
-const mapImage = el("mapImage");
-const tokenLayer = el("tokenLayer");
-
-function render() {
-  const state = loadState();
-  const enc = state?.encounter;
-  const roster = enc?.roster || [];
-
-  // Map image
-  const mapData = loadMap();
-  mapImage.src = mapData || "";
-  mapImage.style.opacity = mapData ? "1" : "0";
-
-  // Tokens on map
-  tokenLayer.innerHTML = "";
-
-  // Simple layout: line them up at the top-left if no saved positions yet
-  roster.forEach((c, i) => {
-    const token = document.createElement("div");
-    token.className = "token";
-    token.dataset.encId = c.encId;
-
-    const img = document.createElement("img");
-    img.src = c.avatar || defaultAvatar(c.type);
-    img.onerror = () => (img.src = defaultAvatar(c.type));
-
-    const label = document.createElement("div");
-    label.className = "tokenLabel";
-    label.textContent = c.name;
-
-    token.appendChild(img);
-    token.appendChild(label);
-
-    // Default positions
-    const x = 20 + (i * 70);
-    const y = 20;
-
-    token.style.left = `${x}px`;
-    token.style.top = `${y}px`;
-
-    enableDrag(token);
-
-    tokenLayer.appendChild(token);
-  });
-
-  // Also upgrade the “Encounter Tokens” list to show avatars (if you still have that section)
-  const list = document.getElementById("tokenList");
-  if (list) {
-    list.innerHTML = "";
-    roster.forEach((c) => {
-      const row = document.createElement("div");
-      row.className = "item";
-
-      row.innerHTML = `
-      <div id="tokenList"></div>
-        <div class="tokenListRow">
-          <img src="${c.avatar || defaultAvatar(c.type)}" alt="">
-          <div>
-            <div class="itemTitle">${c.name}</div>
-            <div class="itemMeta">
-              <span class="badge ${c.type}">${String(c.type).toUpperCase()}</span>
-              <span class="badge">HP: ${c.curHp}/${c.maxHp}</span>
-            </div>
-          </div>
-        </div>
-      `;
-      list.appendChild(row);
-    });
-  }
-}
-
+/* ---------- Drag ---------- */
 function enableDrag(tokenEl) {
   let startX = 0, startY = 0;
   let originLeft = 0, originTop = 0;
@@ -183,9 +69,86 @@ function enableDrag(tokenEl) {
   tokenEl.addEventListener("pointercancel", onUp);
 }
 
-mapUpload?.addEventListener("change", async () => {
+/* ---------- Render ---------- */
+function render() {
+  const state = loadState();
+  const enc = state?.encounter;
+  const roster = enc?.roster || [];
+
+  if (statusEl) {
+    const name = (enc?.name || "").trim() || "unnamed encounter";
+    statusEl.textContent = `Showing tokens for: ${name}`;
+  }
+
+  // Map
+  const mapData = loadMap();
+  if (mapData) {
+    mapImage.src = mapData;
+    mapImage.style.display = "block";
+  } else {
+    mapImage.removeAttribute("src");
+    mapImage.style.display = "none";
+  }
+
+  // Tokens on map
+  tokenLayer.innerHTML = "";
+
+  roster.forEach((c, i) => {
+    const token = document.createElement("div");
+    token.className = "token";
+    token.dataset.encId = c.encId;
+
+    const img = document.createElement("img");
+    img.src = c.avatar || defaultAvatar(c.type);
+    img.onerror = () => (img.src = defaultAvatar(c.type));
+
+    token.appendChild(img);
+
+    // Default positions (simple lineup)
+    token.style.left = `${20 + i * 70}px`;
+    token.style.top = `20px`;
+
+    enableDrag(token);
+    tokenLayer.appendChild(token);
+  });
+
+  // Token list (below)
+  if (tokenList) {
+    tokenList.innerHTML = "";
+    roster.forEach((c) => {
+      const row = document.createElement("div");
+      row.className = "item";
+
+      row.innerHTML = `
+        <div class="tokenListRow">
+          <img src="${c.avatar || defaultAvatar(c.type)}" alt="">
+          <div>
+            <div class="itemTitle">${c.name}</div>
+            <div class="itemMeta">
+              <span class="badge ${c.type}">${String(c.type).toUpperCase()}</span>
+              <span class="badge">HP: ${c.curHp}/${c.maxHp}</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      tokenList.appendChild(row);
+    });
+  }
+}
+
+/* ---------- Events ---------- */
+// Upload battlemap
+mapUpload?.addEventListener("change", () => {
   const file = mapUpload.files?.[0];
   if (!file) return;
+
+  // Guard: localStorage is limited. Keep files reasonable.
+  if (file.size > 4 * 1024 * 1024) {
+    alert("That image is quite large. Try a smaller JPG/PNG (under ~4MB).");
+    mapUpload.value = "";
+    return;
+  }
 
   const reader = new FileReader();
   reader.onload = () => {
@@ -196,13 +159,14 @@ mapUpload?.addEventListener("change", async () => {
   reader.readAsDataURL(file);
 });
 
+// Clear battlemap
 btnClearMap?.addEventListener("click", () => {
   saveMap("");
   render();
 });
 
+// Live update if tracker changes while this tab is open
 window.addEventListener("storage", (e) => {
-  // If tracker changes roster while battlemap is open, refresh tokens
   if (e.key === STORAGE_KEY) render();
 });
 
