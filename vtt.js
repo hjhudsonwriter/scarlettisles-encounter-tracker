@@ -53,10 +53,9 @@ function saveMap(dataUrl) {
 function loadVttState() {
   const raw = localStorage.getItem(VTT_STATE_KEY);
 
-  // default
   const fallback = {
     camera: { x: 0, y: 0, zoom: 1 },
-    tokenPos: {},        // encId -> {x,y} normalized
+    tokenPos: {},
     tokenSize: 56,
     hideMonsters: false
   };
@@ -67,27 +66,11 @@ function loadVttState() {
     const s = JSON.parse(raw) || {};
     s.camera ||= fallback.camera;
     s.tokenPos ||= {};
-    s.tokenSize ??= 56;
-    s.hideMonsters ??= false;
     return s;
   } catch {
     return fallback;
   }
 }
-  try {
-    const s = JSON.parse(raw);
-    s.camera ||= { x: 0, y: 0, zoom: 1 };
-    s.tokenPos ||= {};
-    return s;
-  } catch {
-    return {
-  camera: { x: 0, y: 0, zoom: 1 },
-  tokenPos: {},
-  tokenSize: 56,
-  hideMonsters: false
-};
-}
-
 function saveVttState() {
   localStorage.setItem(VTT_STATE_KEY, JSON.stringify(vttState));
 }
@@ -223,11 +206,30 @@ function renderTokens() {
 
     token.appendChild(img);
     token.appendChild(label);
+
+    // Hide monsters toggle
     if (vttState.hideMonsters && c.type === "monster") {
-  token.classList.add("isHidden");
+      token.classList.add("isHidden");
+    }
+
+    // position from normalized state
+    const pos = vttState.tokenPos[c.encId] || { x: 0.1, y: 0.1 };
+    const { x, y } = normToPx(pos.x, pos.y);
+
+    token.style.left = `${x}px`;
+    token.style.top = `${y}px`;
+
+    // selection visuals
+    token.style.outline = selected.has(c.encId)
+      ? "2px solid rgba(201,162,39,0.65)"
+      : "none";
+
+    enableTokenInput(token);
+
+    tokenLayer.appendChild(token);
+    tokenEls.set(c.encId, token);
+  });
 }
-  renderTokens();
-});
 
     // position from normalized state
     const pos = vttState.tokenPos[c.encId] || { x: 0.1, y: 0.1 };
