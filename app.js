@@ -854,7 +854,9 @@ if ("serviceWorker" in navigator) {
 }
 
 /* ---------- Boot ---------- */
-if (btnSaveEncounter) {
+if (!btnSaveEncounter) {
+  console.warn("Save Encounter button not found (btnSaveEncounter is null). Check index.html id='btnSaveEncounter'.");
+} else {
   btnSaveEncounter.addEventListener("click", () => {
     const enc = state.encounter;
 
@@ -874,11 +876,11 @@ if (btnSaveEncounter) {
         name: c.name,
         type: c.type,
         maxHp: c.maxHp,
-        curHp: c.maxHp,        // reset HP on load
-        init: c.init ?? null,  // keep initiative if rolled
+        curHp: c.maxHp,
+        init: c.init ?? null,
         avatar: c.avatar || "",
-        conditions: [],
-        defeated: false
+        conditions: [],       // resets on load
+        defeated: false       // resets on load
       }))
     };
 
@@ -888,4 +890,5 @@ if (btnSaveEncounter) {
     alert(`Saved: ${name}`);
   });
 }
+
 render();
