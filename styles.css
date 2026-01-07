@@ -557,3 +557,44 @@ boardList .avatar{
   position: relative !important;
   z-index: 9999 !important;
 }
+   /* ===== Fix Saved Encounters overlap ===== */
+
+#savedEncountersList .item {
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  gap: 12px !important;
+  align-items: start !important;
+}
+
+#savedEncountersList .itemMain {
+  min-width: 0 !important; /* allows text to wrap instead of overflow */
+}
+
+#savedEncountersList .itemTitle {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+}
+
+#savedEncountersList .itemMeta {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  align-items: center !important;
+}
+
+#savedEncountersList .itemActions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+}
+
+/* Make sure badges/pills don't become floating landmines */
+#savedEncountersList .badge,
+#savedEncountersList .pill {
+  position: static !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+}
