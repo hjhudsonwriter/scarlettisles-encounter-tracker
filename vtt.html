@@ -44,18 +44,34 @@
     <input id="mapUpload" type="file" accept="image/*" hidden />
   </label>
 
-  <button class="btn ghost" id="btnClearMap">Clear map</button>
-  <span class="hint" id="mapHint">Tip: PNG/JPG works best.</span>
+  <button class="btn ghost" id="btnClearMap" type="button">Clear map</button>
+
+  <div class="vttControlGroup">
+    <button class="btn ghost" id="btnZoomOut" type="button">Map −</button>
+    <button class="btn ghost" id="btnZoomIn" type="button">Map +</button>
+    <button class="btn ghost" id="btnZoomReset" type="button">Reset</button>
+  </div>
+
+  <div class="vttControlGroup">
+    <button class="btn ghost" id="btnTokSm" type="button">Token −</button>
+    <button class="btn ghost" id="btnTokLg" type="button">Token +</button>
+  </div>
+
+  <div class="vttControlGroup">
+    <button class="btn ghost" id="btnFullscreen" type="button">Fullscreen</button>
+  </div>
+
+  <div class="vttControlGroup">
+    <button class="btn" id="btnToggleMonsters" type="button">Hide monsters</button>
+    <span class="hint" id="mapHint">Tip: JPG is smaller than PNG.</span>
+  </div>
 </div>
 
 <div id="mapStage">
   <img id="mapImage" alt="Battlemap" />
   <div id="tokenLayer"></div>
 </div>
-        <div class="subcard" style="margin-top:16px">
-          <h3>Encounter tokens (from localStorage)</h3>
-          <div class="list" id="vttTokenList"></div>
-        </div>
+        
       </div>
     </section>
   </main>
