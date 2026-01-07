@@ -614,6 +614,7 @@ btnEnd.addEventListener("click", () => {
 
 btnNextTurn.addEventListener("click", () => {
   const enc = state.encounter;
+   const btnNextTurn = el("btnNextTurn");
   if (enc.status !== "running") return;
 
   enc.turnIndex = findNextLivingIndex(enc, enc.turnIndex + 1);
