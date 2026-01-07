@@ -130,6 +130,31 @@ body{
   position: relative;
 }
 
+.inspectorTop {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.inspectorTop .avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  object-fit: cover;
+}
+
+.inspectorStats {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.inspectorConds .badge {
+  margin-right: 6px;
+  margin-bottom: 6px;
+  display: inline-block;
+}
+
 /* ===== Tabs ===== */
 .tabs{
   display:flex;
