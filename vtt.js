@@ -3,6 +3,56 @@ const MAP_KEY = "encounterTracker.vtt.mapImage";
 
 const el = (id) => document.getElementById(id);
 
+const MAP_STORAGE_KEY = "encounterTracker.vtt.mapImage";
+
+const mapUpload = document.getElementById("mapUpload");
+const mapImage = document.getElementById("mapImage");
+const btnClearMap = document.getElementById("btnClearMap");
+
+// Restore saved map (if any)
+(function restoreMap() {
+  const saved = localStorage.getItem(MAP_STORAGE_KEY);
+  if (saved) {
+    mapImage.src = saved;
+    mapImage.style.display = "block";
+  } else {
+    mapImage.removeAttribute("src");
+    mapImage.style.display = "none";
+  }
+})();
+
+// Upload new map
+mapUpload?.addEventListener("change", () => {
+  const file = mapUpload.files && mapUpload.files[0];
+  if (!file) return;
+
+  // Optional guard: stop huge images breaking storage
+  if (file.size > 4 * 1024 * 1024) {
+    alert("That image is quite large. Try a smaller JPG/PNG (under ~4MB).");
+    mapUpload.value = "";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const dataUrl = String(reader.result || "");
+    localStorage.setItem(MAP_STORAGE_KEY, dataUrl);
+    mapImage.src = dataUrl;
+    mapImage.style.display = "block";
+  };
+  reader.readAsDataURL(file);
+
+  // allow re-uploading the same file later
+  mapUpload.value = "";
+});
+
+// Clear map
+btnClearMap?.addEventListener("click", () => {
+  localStorage.removeItem(MAP_STORAGE_KEY);
+  mapImage.removeAttribute("src");
+  mapImage.style.display = "none";
+});
+
 function defaultAvatar(type) {
   const fill = type === "pc" ? "#c9a227" : "#7a0f1a";
   const svg = encodeURIComponent(`
