@@ -467,7 +467,7 @@ body::before {
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
-  opacity: 0.12;        /* tweak: 0.06–0.18 */
+  opacity: 0.18;        /* tweak: 0.06–0.18 */
   filter: blur(0px);    /* optional: blur(1px) */
   pointer-events: none;
   z-index: -1;
