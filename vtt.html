@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#7a0f1a" />
+  <title>Scarlett Isles – Battlemap</title>
+
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img class="brandLogo" src="./logo.png" alt="Scarlett Isles Campaign" />
+      <div class="brandText">
+        <div class="brandTitle">Scarlett Isles Campaign – Battlemap</div>
+      </div>
+    </div>
+
+    <div class="topbarActions">
+      <a class="btn ghost" href="./index.html">Back to Tracker</a>
+    </div>
+  </header>
+
+  <main class="shell" style="display:block">
+    <section class="panel" style="max-width:1200px;margin:20px auto;">
+      <div class="panelHead">
+        <div>
+          <h2>Battlemap (VTT)</h2>
+          <p class="muted" id="vttStatus">Loading encounter…</p>
+        </div>
+      </div>
+
+      <div style="padding:16px">
+        <div class="hint">
+          Placeholder page ✅<br/>
+          Next step will be: draw a grid + place tokens from the encounter roster.
+        </div>
+
+        <div class="subcard" style="margin-top:16px">
+          <h3>Encounter tokens (from localStorage)</h3>
+          <div class="list" id="vttTokenList"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="./vtt.js"></script>
+</body>
+</html>
