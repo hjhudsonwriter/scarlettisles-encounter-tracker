@@ -552,4 +552,8 @@ boardList .avatar{
     border-radius: 12px;
     font-size: 14px;       /* keeps your font readable but tighter */
   }
+   #btnSaveEncounter {
+  outline: 3px solid red !important;
+  position: relative !important;
+  z-index: 9999 !important;
 }
