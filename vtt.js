@@ -12,6 +12,7 @@ const mapImage = el("mapImage");
 const tokenLayer = el("tokenLayer");
 const marquee = el("marquee");
 const vttStatus = el("vttStatus");
+
 const btnZoomOut = el("btnZoomOut");
 const btnZoomIn = el("btnZoomIn");
 const btnZoomReset = el("btnZoomReset");
@@ -21,6 +22,10 @@ const btnTokLg = el("btnTokLg");
 
 const btnFullscreen = el("btnFullscreen");
 const btnToggleMonsters = el("btnToggleMonsters");
+
+function clamp(n, min, max) {
+  return Math.max(min, Math.min(max, n));
+}
 
 function defaultAvatar(type) {
   const fill = type === "pc" ? "#c9a227" : "#7a0f1a";
@@ -49,13 +54,12 @@ function saveMap(dataUrl) {
   else localStorage.removeItem(MAP_STORAGE_KEY);
 }
 
-// VTT runtime state (camera + token positions)
 function loadVttState() {
   const raw = localStorage.getItem(VTT_STATE_KEY);
 
   const fallback = {
     camera: { x: 0, y: 0, zoom: 1 },
-    tokenPos: {},
+    tokenPos: {},        // encId -> {x,y} normalized
     tokenSize: 56,
     hideMonsters: false
   };
@@ -66,51 +70,40 @@ function loadVttState() {
     const s = JSON.parse(raw) || {};
     s.camera ||= fallback.camera;
     s.tokenPos ||= {};
+    s.tokenSize ??= 56;
+    s.hideMonsters ??= false;
     return s;
   } catch {
     return fallback;
   }
 }
+
+let vttState = loadVttState();
+
 function saveVttState() {
   localStorage.setItem(VTT_STATE_KEY, JSON.stringify(vttState));
 }
 
-let vttState = loadVttState();
-  s.tokenSize ??= 56;
-s.hideMonsters ??= false;
-
 // ---------- Camera / world transform ----------
 function applyCamera() {
   const { x, y, zoom } = vttState.camera;
-  // translate then scale; tokens + map share this transform so they NEVER desync
   mapWorld.style.transform = `translate(${x}px, ${y}px) scale(${zoom})`;
   saveVttState();
 }
 
-  function applyTokenSize() {
+function applyTokenSize() {
   const size = Number(vttState.tokenSize) || 56;
   mapStage.style.setProperty("--tokenSize", `${clamp(size, 24, 140)}px`);
   saveVttState();
 }
 
-function clamp(n, min, max) {
-  return Math.max(min, Math.min(max, n));
-}
-
+// Work in WORLD coordinates (so zoom/fullscreen doesn’t break)
 function worldDims() {
   const zoom = vttState.camera.zoom || 1;
   return {
     w: (mapStage.clientWidth || 1) / zoom,
     h: (mapStage.clientHeight || 1) / zoom,
     zoom
-  };
-}
-
-function clampTokenToStage(px, py, tokenSize) {
-  const { w, h } = worldDims();
-  return {
-    x: clamp(px, 0, Math.max(0, w - tokenSize)),
-    y: clamp(py, 0, Math.max(0, h - tokenSize))
   };
 }
 
@@ -124,7 +117,15 @@ function normToPx(nx, ny) {
   return { x: nx * w, y: ny * h };
 }
 
-// ---------- Map upload ----------
+function clampTokenToStage(px, py, tokenSize) {
+  const { w, h } = worldDims();
+  return {
+    x: clamp(px, 0, Math.max(0, w - tokenSize)),
+    y: clamp(py, 0, Math.max(0, h - tokenSize))
+  };
+}
+
+// ---------- Map restore/upload ----------
 (function restoreMap() {
   const saved = loadMap();
   if (saved) {
@@ -140,9 +141,7 @@ mapUpload?.addEventListener("change", () => {
   const file = mapUpload.files && mapUpload.files[0];
   if (!file) return;
 
-  // localStorage is small. PNGs explode in size when base64’d.
-  // JPG is your friend here.
-  const maxBytes = 4 * 1024 * 1024;
+  const maxBytes = 4 * 1024 * 1024; // localStorage is small
   if (file.size > maxBytes) {
     alert("That image is over ~4MB. Please use a smaller file (JPG recommended).");
     mapUpload.value = "";
@@ -172,13 +171,10 @@ let selected = new Set(); // encIds
 let tokenEls = new Map(); // encId -> element
 
 function ensureDefaultPositions() {
-  // Give any token without a saved pos a lineup position.
-  // Stored normalized, so no fullscreen jump.
   const existing = vttState.tokenPos;
   let idx = 0;
   roster.forEach((c) => {
     if (existing[c.encId]) return;
-    // spread across top
     const nx = 0.06 + (idx * 0.08);
     const ny = 0.08 + ((idx > 10 ? 1 : 0) * 0.10);
     existing[c.encId] = { x: clamp(nx, 0.05, 0.95), y: clamp(ny, 0.05, 0.95) };
@@ -207,19 +203,15 @@ function renderTokens() {
     token.appendChild(img);
     token.appendChild(label);
 
-    // Hide monsters toggle
     if (vttState.hideMonsters && c.type === "monster") {
       token.classList.add("isHidden");
     }
 
-    // position from normalized state
     const pos = vttState.tokenPos[c.encId] || { x: 0.1, y: 0.1 };
     const { x, y } = normToPx(pos.x, pos.y);
-
     token.style.left = `${x}px`;
     token.style.top = `${y}px`;
 
-    // selection visuals
     token.style.outline = selected.has(c.encId)
       ? "2px solid rgba(201,162,39,0.65)"
       : "none";
@@ -231,39 +223,24 @@ function renderTokens() {
   });
 }
 
-    // position from normalized state
-    const pos = vttState.tokenPos[c.encId] || { x: 0.1, y: 0.1 };
-    const { x, y } = normToPx(pos.x, pos.y);
-
-    token.style.left = `${x}px`;
-    token.style.top = `${y}px`;
-
-    // selection visuals
-    if (selected.has(c.encId)) token.style.outline = "2px solid rgba(201,162,39,0.65)";
-    else token.style.outline = "none";
-
-    enableTokenInput(token);
-
-    tokenLayer.appendChild(token);
-    tokenEls.set(c.encId, token);
-  });
-}
-
-function setSelected(encId, on) {
-  if (on) selected.add(encId);
-  else selected.delete(encId);
-  renderTokens();
-}
-
 function clearSelected() {
   selected.clear();
   renderTokens();
 }
 
-// ---------- Smooth drag + group move ----------
+// Convert screen pointer to WORLD coords (undo camera transform)
+function pointerToWorld(e) {
+  const rect = mapStage.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+
+  const { x, y, zoom } = vttState.camera;
+  return { x: (sx - x) / zoom, y: (sy - y) / zoom };
+}
+
+// ---------- Drag tokens (supports multi-select) ----------
 function enableTokenInput(tokenEl) {
   tokenEl.addEventListener("pointerdown", (e) => {
-    // if we're panning or selecting, tokens shouldn't start a drag
     if (camera.isPanning || marqueeState.dragging) return;
 
     e.preventDefault();
@@ -271,9 +248,6 @@ function enableTokenInput(tokenEl) {
 
     const encId = tokenEl.dataset.encId;
 
-    // Click selection behavior:
-    // - normal click selects just this
-    // - ctrl click toggles selection
     if (e.ctrlKey) {
       if (selected.has(encId)) selected.delete(encId);
       else selected.add(encId);
@@ -285,17 +259,16 @@ function enableTokenInput(tokenEl) {
     }
     renderTokens();
 
-    // start group drag
     const start = pointerToWorld(e);
     const groupStart = [];
 
     selected.forEach((id) => {
-      const el = tokenEls.get(id);
-      if (!el) return;
+      const elx = tokenEls.get(id);
+      if (!elx) return;
       groupStart.push({
         id,
-        left: parseFloat(el.style.left || "0"),
-        top: parseFloat(el.style.top || "0")
+        left: parseFloat(elx.style.left || "0"),
+        top: parseFloat(elx.style.top || "0")
       });
     });
 
@@ -307,16 +280,16 @@ function enableTokenInput(tokenEl) {
       const dy = now.y - start.y;
 
       groupStart.forEach((t) => {
-        const el = tokenEls.get(t.id);
-        if (!el) return;
+        const elx = tokenEls.get(t.id);
+        if (!elx) return;
 
-        const tokenSize = el.querySelector("img")?.getBoundingClientRect().width || 56;
-        const clamped = clampTokenToStage(t.left + dx, t.top + dy, tokenSize);
+        const tokenSize = elx.querySelector("img")?.getBoundingClientRect().width || 56;
+        const clampedPos = clampTokenToStage(t.left + dx, t.top + dy, tokenSize);
 
-        el.style.left = `${clamped.x}px`;
-        el.style.top = `${clamped.y}px`;
+        elx.style.left = `${clampedPos.x}px`;
+        elx.style.top = `${clampedPos.y}px`;
 
-        const n = pxToNorm(clamped.x, clamped.y);
+        const n = pxToNorm(clampedPos.x, clampedPos.y);
         vttState.tokenPos[t.id] = { x: n.x, y: n.y };
       });
 
@@ -335,17 +308,6 @@ function enableTokenInput(tokenEl) {
   });
 }
 
-// Convert screen pointer to WORLD coordinates (undo camera transform)
-function pointerToWorld(e) {
-  const rect = mapStage.getBoundingClientRect();
-  const sx = e.clientX - rect.left;
-  const sy = e.clientY - rect.top;
-
-  const { x, y, zoom } = vttState.camera;
-  // reverse translate then scale
-  return { x: (sx - x) / zoom, y: (sy - y) / zoom };
-}
-
 // ---------- Spacebar pan ----------
 const camera = { isPanning: false, startX: 0, startY: 0, originX: 0, originY: 0 };
 const keys = { space: false };
@@ -353,7 +315,6 @@ const keys = { space: false };
 window.addEventListener("keydown", (e) => {
   if (e.code === "Space") {
     keys.space = true;
-    // prevent page scroll
     e.preventDefault();
   }
 });
@@ -363,13 +324,11 @@ window.addEventListener("keyup", (e) => {
 });
 
 mapStage.addEventListener("pointerdown", (e) => {
-  // Ctrl+drag = marquee selection
   if (e.ctrlKey && !keys.space) {
     startMarquee(e);
     return;
   }
 
-  // Space+drag = pan
   if (keys.space) {
     camera.isPanning = true;
     const rect = mapStage.getBoundingClientRect();
@@ -381,11 +340,10 @@ mapStage.addEventListener("pointerdown", (e) => {
     mapStage.setPointerCapture(e.pointerId);
     e.preventDefault();
   } else {
-    // Click empty space clears selection
-if (!e.ctrlKey) {
-  const hitToken = e.target && e.target.closest && e.target.closest(".token");
-  if (!hitToken) clearSelected();
-}
+    if (!e.ctrlKey) {
+      const hitToken = e.target && e.target.closest && e.target.closest(".token");
+      if (!hitToken) clearSelected();
+    }
   }
 });
 
@@ -394,6 +352,7 @@ mapStage.addEventListener("pointermove", (e) => {
   const rect = mapStage.getBoundingClientRect();
   const mx = e.clientX - rect.left;
   const my = e.clientY - rect.top;
+
   const dx = mx - camera.startX;
   const dy = my - camera.startY;
 
@@ -410,18 +369,14 @@ mapStage.addEventListener("pointercancel", () => {
   camera.isPanning = false;
 });
 
-// ---------- Zoom (mouse wheel + ctrl/trackpad friendly) ----------
+// ---------- Ctrl + wheel zoom ----------
 mapStage.addEventListener("wheel", (e) => {
-  // zoom when holding Ctrl OR on trackpads (often reports ctrlKey)
   if (!e.ctrlKey) return;
-
   e.preventDefault();
 
-  const zoom = vttState.camera.zoom;
+  const zoom = vttState.camera.zoom || 1;
   const delta = -Math.sign(e.deltaY) * 0.08;
-  const next = clamp(zoom + delta, 0.5, 3);
-
-  vttState.camera.zoom = next;
+  vttState.camera.zoom = clamp(zoom + delta, 0.5, 3);
   applyCamera();
 }, { passive: false });
 
@@ -472,15 +427,16 @@ mapStage.addEventListener("pointerup", () => {
   const r = marqueeState.rect;
   if (!r) return;
 
-  // Select tokens whose CENTER is inside the box
   selected.clear();
   tokenEls.forEach((tokenEl, encId) => {
     const left = parseFloat(tokenEl.style.left || "0");
     const top = parseFloat(tokenEl.style.top || "0");
     const img = tokenEl.querySelector("img");
     const size = img ? (parseFloat(getComputedStyle(img).width) || 56) : 56;
+
     const cx = left + size / 2;
     const cy = top + size / 2;
+
     if (cx >= r.x1 && cx <= r.x2 && cy >= r.y1 && cy <= r.y2) {
       selected.add(encId);
     }
@@ -529,7 +485,9 @@ btnFullscreen?.addEventListener("click", async () => {
 
 btnToggleMonsters?.addEventListener("click", () => {
   vttState.hideMonsters = !vttState.hideMonsters;
-  btnToggleMonsters.textContent = vttState.hideMonsters ? "Show monsters" : "Hide monsters";
+  if (btnToggleMonsters) {
+    btnToggleMonsters.textContent = vttState.hideMonsters ? "Show monsters" : "Hide monsters";
+  }
   saveVttState();
   renderTokens();
 });
@@ -538,18 +496,15 @@ document.addEventListener("fullscreenchange", () => {
   renderTokens();
 });
 
-// ---------- Keep things stable on resize / fullscreen ----------
+// ---------- Resize stability ----------
 const ro = new ResizeObserver(() => {
-  // Token coords are normalized, so re-render places them correctly in new size
   renderTokens();
 });
 ro.observe(mapStage);
 
 // ---------- Cross-tab updates ----------
 window.addEventListener("storage", (e) => {
-  if (e.key === STORAGE_KEY) {
-    hydrateFromTracker();
-  }
+  if (e.key === STORAGE_KEY) hydrateFromTracker();
 });
 
 // ---------- Boot ----------
