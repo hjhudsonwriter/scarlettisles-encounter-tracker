@@ -8,8 +8,9 @@
 
   <link rel="stylesheet" href="./styles.css" />
 </head>
+  <link rel="stylesheet" href="./vtt.css" />
 
-<body>
+<body class="vtt">
   <header class="topbar">
     <div class="brand">
       <img class="brandLogo" src="./logo.png" alt="Scarlett Isles Campaign" />
@@ -38,6 +39,20 @@
           Next step will be: draw a grid + place tokens from the encounter roster.
         </div>
 
+        <div class="vttControls">
+  <label class="btn">
+    Upload battlemap
+    <input id="mapUpload" type="file" accept="image/*" hidden />
+  </label>
+
+  <button class="btn ghost" id="btnClearMap">Clear map</button>
+  <span class="hint" id="mapHint">Tip: PNG/JPG works best.</span>
+</div>
+
+<div id="mapStage">
+  <img id="mapImage" alt="Battlemap" />
+  <div id="tokenLayer"></div>
+</div>
         <div class="subcard" style="margin-top:16px">
           <h3>Encounter tokens (from localStorage)</h3>
           <div class="list" id="vttTokenList"></div>
