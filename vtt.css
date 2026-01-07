@@ -1,83 +1,128 @@
-/* Only applies to the battlemap page (keeps tracker safe) */
-body.vtt .vttWrap { max-width: 1100px; margin: 0 auto; }
+/* ---------- VTT DARK MODE THEME ---------- */
+body.vtt {
+  background: #0e0f12;
+  color: #e7e7ea;
+}
 
-body.vtt .vttControls {
+body.vtt .topbar {
+  background: rgba(20, 21, 26, 0.92);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+body.vtt .panel {
+  background: rgba(20, 21, 26, 0.86);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+}
+
+body.vtt .panelHead {
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+body.vtt .hint,
+body.vtt .muted {
+  color: rgba(231,231,234,0.7);
+}
+
+body.vtt .btn.ghost {
+  border-color: rgba(255,255,255,0.16);
+  color: rgba(231,231,234,0.9);
+}
+
+body.vtt .btn.ghost:hover {
+  border-color: rgba(255,255,255,0.28);
+}
+
+/* ---------- Controls row ---------- */
+.vttControls {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   align-items: center;
-  flex-wrap: wrap;
-  margin: 12px 0 18px;
+  margin: 14px 0 12px;
 }
 
-body.vtt #mapStage {
+.vttControlGroup {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ---------- Map Stage ---------- */
+#mapStage {
   position: relative;
   width: 100%;
-  height: 640px;
-  border-radius: 16px;
+  height: 70vh;
+  min-height: 520px;
+  border-radius: 14px;
   overflow: hidden;
-  background: rgba(255,255,255,0.6);
-  border: 1px solid rgba(0,0,0,0.08);
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.35);
 }
 
-body.vtt #mapImage {
+/* We scale this wrapper for map zoom */
+#mapWorld {
+  position: absolute;
+  inset: 0;
+  transform-origin: top left;
+}
+
+#mapImage {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  pointer-events: none;
+  object-fit: contain; /* keeps whole map visible */
   user-select: none;
+  pointer-events: none;
 }
 
-body.vtt #tokenLayer {
+#tokenLayer {
   position: absolute;
   inset: 0;
 }
 
-body.vtt .token {
+/* ---------- Tokens ---------- */
+.token {
   position: absolute;
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  border: 2px solid rgba(0,0,0,0.18);
-  background: #f6efe2;
-  box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+  display: grid;
+  place-items: center;
+  user-select: none;
+  touch-action: none;
   cursor: grab;
-  overflow: hidden;
 }
 
-body.vtt .token:active { cursor: grabbing; }
+.token:active { cursor: grabbing; }
 
-body.vtt .token img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+.token img {
+  width: var(--tokenSize, 56px);
+  height: var(--tokenSize, 56px);
+  border-radius: 10px;
+  border: 2px solid rgba(255,255,255,0.22);
+  box-shadow: 0 10px 18px rgba(0,0,0,0.35);
+  background: rgba(0,0,0,0.25);
 }
 
-body.vtt .tokenLabel {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: -22px;
+.tokenLabel {
+  margin-top: 6px;
   font-size: 12px;
-  background: rgba(255,255,255,0.85);
   padding: 2px 6px;
-  border-radius: 8px;
-  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 10px;
+  background: rgba(0,0,0,0.55);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(231,231,234,0.9);
   white-space: nowrap;
 }
 
-body.vtt .tokenListRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+/* Hidden tokens (DM hide) */
+.token.isHidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
-body.vtt .tokenListRow img {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  object-fit: cover;
-  border: 1px solid rgba(0,0,0,0.15);
+/* Fullscreen tweaks */
+:fullscreen #mapStage {
+  height: 100vh;
+  min-height: 100vh;
+  border-radius: 0;
 }
