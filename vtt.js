@@ -274,37 +274,38 @@ function enableTokenInput(tokenEl) {
 
     tokenEl.setPointerCapture(e.pointerId);
 
-    const onMove = (ev) => {
-      const now = pointerToWorld(ev);
-      const dx = now.x - start.x;
-      const dy = now.y - start.y;
+const onMove = (ev) => {
+  const now = pointerToWorld(ev);
+  const dx = now.x - start.x;
+  const dy = now.y - start.y;
 
-      groupStart.forEach((t) => {
-        const elx = tokenEls.get(t.id);
-        if (!elx) return;
+  groupStart.forEach((t) => {
+    const elx = tokenEls.get(t.id);
+    if (!elx) return;
 
-        const tokenSize = elx.querySelector("img")?.getBoundingClientRect().width || 56;
-        const clampedPos = clampTokenToStage(t.left + dx, t.top + dy, tokenSize);
+    const tokenSize = elx.querySelector("img")?.getBoundingClientRect().width || 56;
+    const clampedPos = clampTokenToStage(t.left + dx, t.top + dy, tokenSize);
 
-        elx.style.left = `${clampedPos.x}px`;
-        elx.style.top = `${clampedPos.y}px`;
+    elx.style.left = `${clampedPos.x}px`;
+    elx.style.top = `${clampedPos.y}px`;
 
-        const n = pxToNorm(clampedPos.x, clampedPos.y);
-        vttState.tokenPos[t.id] = { x: n.x, y: n.y };
-      });
+    const n = pxToNorm(clampedPos.x, clampedPos.y);
+    vttState.tokenPos[t.id] = { x: n.x, y: n.y };
+  });
 
-      saveVttState();
-    };
+  saveVttState();
+};
 
-    const onUp = () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-      window.removeEventListener("pointercancel", onUp);
-    };
+const onUp = () => {
+  tokenEl.removeEventListener("pointermove", onMove);
+  tokenEl.removeEventListener("pointerup", onUp);
+  tokenEl.removeEventListener("pointercancel", onUp);
+};
 
-    window.addEventListener("pointermove", onMove, { passive: false });
-    window.addEventListener("pointerup", onUp);
-    window.addEventListener("pointercancel", onUp);
+// IMPORTANT: listen on the captured element (tokenEl), not window
+tokenEl.addEventListener("pointermove", onMove, { passive: false });
+tokenEl.addEventListener("pointerup", onUp);
+tokenEl.addEventListener("pointercancel", onUp);
   });
 }
 
