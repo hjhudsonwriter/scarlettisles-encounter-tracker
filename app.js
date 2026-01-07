@@ -123,6 +123,7 @@ const btnEnd = el("btnEnd");
 const btnNextTurn = el("btnNextTurn");
 const btnApplyDamage = el("btnApplyDamage");
 const btnAddCondition = el("btnAddCondition");
+const conditionTurns = el("conditionTurns");
 const btnExportJson = el("btnExportJson");
 const btnImportJson = el("btnImportJson");
 const btnImportPdf = el("btnImportPdf");
@@ -132,6 +133,17 @@ const btnInstall = el("btnInstall");
 const damageInput = el("damageInput");
 const conditionInput = el("conditionInput");
 const pdfStatus = el("pdfStatus");
+
+function tickDownConditionsForCombatant(combatant) {
+  if (!combatant || !Array.isArray(combatant.conditions)) return;
+
+  combatant.conditions = combatant.conditions
+    .map(c => {
+      if (typeof c === "string") return c; // old data safety
+      return { ...c, remaining: (c.remaining ?? 1) - 1 };
+    })
+    .filter(c => typeof c === "string" || c.remaining > 0);
+}
 
 /* ---------- Tabs ---------- */
 document.querySelectorAll(".tab").forEach(tab => {
@@ -282,8 +294,11 @@ if (enc.roster.length === 0) {
       <div class="boardConds">
         ${
           (c.conditions && c.conditions.length)
-            ? c.conditions.map(x => `<span class="badge">${escapeHtml(x)}</span>`).join(" ")
-            : `<span class="badge">—</span>`
+  ? c.conditions.map(x => {
+      if (typeof x === "string") return `<span class="badge">${escapeHtml(x)}</span>`;
+      return `<span class="badge">${escapeHtml(x.name)} (${x.remaining})</span>`;
+    }).join(" ")
+  : `<span class="badge">—</span>`
         }
       </div>
     `;
@@ -590,11 +605,28 @@ function applyDamageAndConditions(conditionOnly) {
   }
 
   const cond = conditionInput.value.trim();
-  if (cond) {
-    target.conditions = target.conditions || [];
-    if (!target.conditions.includes(cond)) target.conditions.push(cond);
-    conditionInput.value = "";
+if (cond) {
+  const turnsRaw = conditionTurns?.value?.trim();
+  const turns = turnsRaw === "" ? 1 : Number(turnsRaw);
+
+  if (!Number.isFinite(turns) || turns < 1) {
+    alert("Turns must be 1 or more.");
+    return;
   }
+
+  target.conditions = Array.isArray(target.conditions) ? target.conditions : [];
+
+  // If condition already exists, refresh its timer
+  const existing = target.conditions.find(x => (typeof x === "object" ? x.name : x) === cond);
+  if (existing && typeof existing === "object") {
+    existing.remaining = Math.floor(turns);
+  } else if (!existing) {
+    target.conditions.push({ name: cond, remaining: Math.floor(turns) });
+  }
+
+  conditionInput.value = "";
+  if (conditionTurns) conditionTurns.value = "";
+}
 
   if (target.curHp <= 0) target.defeated = true;
 
