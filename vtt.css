@@ -234,6 +234,10 @@ body.vtt .btn:not(.ghost):hover {
 }
 
 /* Fullscreen: remove outer panel padding feel */
-:fullscreen body.vtt .panel {
+#mapStage:fullscreen {
   border-radius: 0;
+}
+
+#mapStage:fullscreen ~ * {
+  /* harmless, but keeps the rule valid */
 }
