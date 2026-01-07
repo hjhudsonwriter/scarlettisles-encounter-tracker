@@ -619,3 +619,50 @@ boardList .avatar{
   text-overflow: unset !important;
   word-break: break-word !important;
 }
+
+   /* ===== Centre panel row layout fix (stops REMOVE overlapping text) ===== */
+
+.boardList .item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+}
+
+.boardList .item .avatar {
+  flex: 0 0 auto !important;
+}
+
+.boardList .itemMain {
+  flex: 1 1 auto !important;
+  min-width: 0 !important; /* allows text to wrap instead of pushing under REMOVE */
+}
+
+.boardList .boardActionsCell {
+  flex: 0 0 auto !important;
+  position: static !important; /* kills any absolute/overlay behaviour */
+  z-index: 1 !important;
+}
+
+/* Make sure the inner 4 columns (Init | Name | HP | Conditions) behave */
+.boardList .itemMain {
+  display: grid !important;
+  grid-template-columns: 70px minmax(240px, 1fr) 120px minmax(220px, 1fr) !important;
+  gap: 12px !important;
+  align-items: center !important;
+}
+
+.boardName {
+  min-width: 0 !important;
+}
+
+.boardName .nameText {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  word-break: break-word !important;
+}
+
+/* Keep the REMOVE button tidy */
+.boardActionsCell .btn {
+  white-space: nowrap !important;
+}
