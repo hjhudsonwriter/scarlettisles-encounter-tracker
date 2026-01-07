@@ -1,78 +1,17 @@
-/* Encounter Tracker MVP
-   - Library stored in localStorage
-   - Campaign export/import JSON
-   - Basic PDF text extraction + naive parse (optional)
-   - Encounter roster + initiative + turn runner
+/* Scarlett Isles – Encounter Tracker
+   Clean rebuild of app.js
+   - No event listeners inside render()
+   - Robust localStorage state
+   - Complete Turn: applies to selected target, then advances turn
+   - Conditions with turn countdown (ticks down when that combatant ends their turn)
+   - Center board rows rendered as true 6-column grid (prevents REMOVE overlap)
 */
 
 const STORAGE_KEY = "encounterTracker.v1";
 
-/* ---------- State load/save (robust, handles Sets) ---------- */
-const state = loadState();
-
-function saveState() {
-  const toSave = {
-    ...state,
-    selectedLibraryIds: Array.from(state.selectedLibraryIds || [])
-  };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-}
-
-function loadState() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-
-  // Fresh install / empty storage
-  if (!raw) {
-    return {
-      library: [],
-      selectedLibraryIds: new Set(),
-      savedEncounters: [],
-      encounter: {
-        name: "",
-        status: "idle",
-        roster: [],
-        turnIndex: 0
-      }
-    };
-  }
-
-  // Existing saved state
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch (e) {
-    console.warn("State JSON was corrupted; resetting.", e);
-    localStorage.removeItem(STORAGE_KEY);
-    return {
-      library: [],
-      selectedLibraryIds: new Set(),
-      savedEncounters: [],
-      encounter: {
-        name: "",
-        status: "idle",
-        roster: [],
-        turnIndex: 0
-      }
-    };
-  }
-
-  // Normalize fields
-  parsed.library = Array.isArray(parsed.library) ? parsed.library : [];
-  parsed.savedEncounters = Array.isArray(parsed.savedEncounters) ? parsed.savedEncounters : [];
-
-  const ids = Array.isArray(parsed.selectedLibraryIds) ? parsed.selectedLibraryIds : [];
-  parsed.selectedLibraryIds = new Set(ids);
-
-  parsed.encounter = parsed.encounter || { name: "", status: "idle", roster: [], turnIndex: 0 };
-  parsed.encounter.roster = Array.isArray(parsed.encounter.roster) ? parsed.encounter.roster : [];
-  parsed.encounter.turnIndex = Number.isFinite(parsed.encounter.turnIndex) ? parsed.encounter.turnIndex : 0;
-  parsed.encounter.status = parsed.encounter.status || "idle";
-  parsed.encounter.name = parsed.encounter.name || "";
-
-  return parsed;
-}
-
 /* ---------- Utilities ---------- */
+const el = (id) => document.getElementById(id);
+
 function uid() {
   return Math.random().toString(16).slice(2) + Date.now().toString(16);
 }
@@ -102,26 +41,92 @@ function defaultAvatar(type) {
   return `data:image/svg+xml,${svg}`;
 }
 
-/* ---------- DOM helpers ---------- */
-const el = (id) => document.getElementById(id);
+/* ---------- State ---------- */
+function defaultState() {
+  return {
+    library: [],
+    selectedLibraryIds: new Set(),
+    savedEncounters: [],
+    encounter: {
+      name: "",
+      status: "idle", // idle | ready | running | paused | ended
+      roster: [],
+      turnIndex: 0,
+      round: 1
+    },
+    ui: {
+      targetId: null
+    }
+  };
+}
 
+function loadState() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return defaultState();
+
+  try {
+    const parsed = JSON.parse(raw);
+
+    const s = defaultState();
+    s.library = Array.isArray(parsed.library) ? parsed.library : [];
+    s.savedEncounters = Array.isArray(parsed.savedEncounters) ? parsed.savedEncounters : [];
+
+    const ids = Array.isArray(parsed.selectedLibraryIds) ? parsed.selectedLibraryIds : [];
+    s.selectedLibraryIds = new Set(ids);
+
+    const enc = parsed.encounter || {};
+    s.encounter.name = typeof enc.name === "string" ? enc.name : "";
+    s.encounter.status = enc.status || "idle";
+    s.encounter.roster = Array.isArray(enc.roster) ? enc.roster : [];
+    s.encounter.turnIndex = Number.isFinite(enc.turnIndex) ? enc.turnIndex : 0;
+    s.encounter.round = Number.isFinite(enc.round) ? enc.round : 1;
+
+    const ui = parsed.ui || {};
+    s.ui.targetId = typeof ui.targetId === "string" ? ui.targetId : null;
+
+    // Safety normalisation for roster entries
+    s.encounter.roster.forEach(c => {
+      c.conditions = Array.isArray(c.conditions) ? c.conditions : [];
+      c.defeated = !!c.defeated;
+      c.curHp = Number.isFinite(c.curHp) ? c.curHp : c.maxHp;
+      c.maxHp = Number.isFinite(c.maxHp) ? c.maxHp : 1;
+    });
+
+    return s;
+  } catch (e) {
+    console.warn("State was corrupted; resetting.", e);
+    localStorage.removeItem(STORAGE_KEY);
+    return defaultState();
+  }
+}
+
+const state = loadState();
+
+function saveState() {
+  const toSave = {
+    ...state,
+    selectedLibraryIds: Array.from(state.selectedLibraryIds || []),
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+}
+
+/* ---------- DOM refs ---------- */
 const libraryList = el("libraryList");
+const savedEncountersList = el("savedEncountersList");
 const encList = el("encList");
 const encStatus = el("encStatus");
 const turnPill = el("turnPill");
 const targetSelect = el("targetSelect");
 
 const btnAddToLibrary = el("btnAddToLibrary");
-const btnSaveEncounter = el("btnSaveEncounter");
-const savedEncountersList = el("savedEncountersList");
 const btnAddSelected = el("btnAddSelected");
 const btnClearEncounter = el("btnClearEncounter");
 const btnAutoInit = el("btnAutoInit");
 const btnBegin = el("btnBegin");
 const btnPause = el("btnPause");
 const btnEnd = el("btnEnd");
+const btnSaveEncounter = el("btnSaveEncounter");
 const btnAddCondition = el("btnAddCondition");
-const conditionTurns = el("conditionTurns");
 const btnCompleteTurn = el("btnCompleteTurn");
 const btnExportJson = el("btnExportJson");
 const btnImportJson = el("btnImportJson");
@@ -131,6 +136,7 @@ const btnInstall = el("btnInstall");
 
 const damageInput = el("damageInput");
 const conditionInput = el("conditionInput");
+const conditionTurns = el("conditionTurns");
 const pdfStatus = el("pdfStatus");
 
 const inspectorAvatar = el("inspectorAvatar");
@@ -141,39 +147,188 @@ const inspectorHp = el("inspectorHp");
 const inspectorConds = el("inspectorConds");
 const momentumText = el("momentumText");
 
+/* ---------- Core helpers ---------- */
+function getCurrentCombatant() {
+  const enc = state.encounter;
+  if (enc.status !== "running") return null;
+  if (!enc.roster.length) return null;
+  return enc.roster[enc.turnIndex] || null;
+}
+
+function findNextLivingIndex(enc, startIndex) {
+  if (!enc.roster.length) return 0;
+
+  let idx = ((startIndex % enc.roster.length) + enc.roster.length) % enc.roster.length;
+  for (let i = 0; i < enc.roster.length; i++) {
+    const c = enc.roster[idx];
+    if (c && !c.defeated && c.curHp > 0) return idx;
+    idx = (idx + 1) % enc.roster.length;
+  }
+  return 0;
+}
+
 function tickDownConditionsForCombatant(combatant) {
   if (!combatant || !Array.isArray(combatant.conditions)) return;
 
   combatant.conditions = combatant.conditions
     .map(c => {
-      if (typeof c === "string") return c; // old data safety
-      return { ...c, remaining: (c.remaining ?? 1) - 1 };
+      if (typeof c === "string") return c; // backward compatibility
+      const rem = Number.isFinite(c.remaining) ? c.remaining : 1;
+      return { ...c, remaining: rem - 1 };
     })
-    .filter(c => typeof c === "string" || c.remaining > 0);
+    .filter(c => (typeof c === "string") || (c.remaining > 0));
 }
 
-/* ---------- Tabs ---------- */
-document.querySelectorAll(".tab").forEach(tab => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-    document.querySelectorAll(".tabPanel").forEach(p => p.classList.remove("active"));
-    tab.classList.add("active");
-    el(`tab-${tab.dataset.tab}`).classList.add("active");
-  });
-});
+function normalizeEncounterAfterRosterChange() {
+  const enc = state.encounter;
+  enc.turnIndex = clamp(enc.turnIndex, 0, Math.max(0, enc.roster.length - 1));
+  if (enc.roster.length === 0) {
+    enc.status = "idle";
+    enc.turnIndex = 0;
+    enc.round = 1;
+  }
+}
+
+function checkAutoEnd() {
+  const enc = state.encounter;
+  if (enc.status !== "running") return;
+
+  const monsters = enc.roster.filter(x => x.type === "monster");
+  if (monsters.length === 0) return;
+
+  const allDefeated = monsters.every(m => m.defeated || m.curHp <= 0);
+  if (allDefeated) {
+    enc.status = "ended";
+    saveState();
+    render();
+  }
+}
+
+/* ---------- Damage + Conditions ---------- */
+function applyDamageAndMaybeCondition({ conditionOnly }) {
+  const enc = state.encounter;
+  if (enc.status !== "running") return;
+
+  const targetId = targetSelect?.value;
+  if (!targetId) return;
+
+  const target = enc.roster.find(x => x.encId === targetId);
+  if (!target) return;
+
+  // Damage / Healing
+  if (!conditionOnly) {
+    const dmgRaw = (damageInput?.value ?? "").trim();
+    if (dmgRaw !== "") {
+      const dmg = Number(dmgRaw);
+      if (!Number.isFinite(dmg)) {
+        alert("Damage must be a number.");
+        return;
+      }
+      // Positive = damage, negative = healing (so subtract dmg)
+      target.curHp = clamp(target.curHp - Math.floor(dmg), 0, target.maxHp);
+      damageInput.value = "";
+    }
+  }
+
+  // Condition + Turns
+  const cond = (conditionInput?.value ?? "").trim();
+  if (cond) {
+    const turnsRaw = (conditionTurns?.value ?? "").trim();
+    const turns = turnsRaw === "" ? 1 : Number(turnsRaw);
+
+    if (!Number.isFinite(turns) || turns < 1) {
+      alert("Turns must be 1 or more.");
+      return;
+    }
+
+    target.conditions = Array.isArray(target.conditions) ? target.conditions : [];
+    const existing = target.conditions.find(x => (typeof x === "object" ? x.name : x) === cond);
+
+    if (existing && typeof existing === "object") {
+      existing.remaining = Math.floor(turns);
+    } else if (!existing) {
+      target.conditions.push({ name: cond, remaining: Math.floor(turns) });
+    }
+
+    conditionInput.value = "";
+    conditionTurns.value = "";
+  }
+
+  if (target.curHp <= 0) target.defeated = true;
+}
 
 /* ---------- Render ---------- */
 function render() {
-  // counts
+  // Counts
   const pcs = state.library.filter(x => x.type === "pc").length;
   const mons = state.library.filter(x => x.type === "monster").length;
   el("countPCs").textContent = `PCs: ${pcs}`;
   el("countMonsters").textContent = `Monsters: ${mons}`;
 
-  // encounter name
+  // Encounter name
   el("encName").value = state.encounter.name || "";
 
-  // library list
+  // Status text
+  const enc = state.encounter;
+  const statusText = {
+    idle: "Encounter not started. Add combatants, roll initiative, then begin.",
+    ready: "Ready. Roll initiative if needed, then begin.",
+    running: "Running. Apply damage/conditions and move through turns.",
+    paused: "Paused. Resume by pressing Begin.",
+    ended: "Ended. Clear or build a new encounter."
+  }[enc.status] || "";
+  encStatus.textContent = statusText;
+
+  // Buttons enablement
+  btnPause.disabled = !(enc.status === "running");
+  btnEnd.disabled = !(enc.status === "running" || enc.status === "paused");
+  btnBegin.disabled = !(enc.roster.length > 0) || (enc.status === "running");
+  btnAutoInit.disabled = !(enc.roster.length > 0) || (enc.status === "running");
+  btnAddCondition.disabled = !(enc.status === "running");
+  btnCompleteTurn.disabled = !(enc.status === "running");
+
+  // Turn pill + inspector
+  const current = getCurrentCombatant();
+  if (!current) {
+    turnPill.textContent = (enc.status === "paused") ? "Paused" : "Not started";
+
+    inspectorName.textContent = "No active turn";
+    inspectorMeta.textContent = "Start an encounter to see the active combatant.";
+    inspectorAvatar.src = defaultAvatar("pc");
+    inspectorStats.hidden = true;
+  } else {
+    turnPill.textContent = `${current.name} (Init ${current.init ?? "—"})`;
+
+    inspectorName.textContent = current.name;
+    inspectorMeta.textContent = `${current.type.toUpperCase()} • Init ${current.init ?? "—"} • Round ${enc.round}`;
+    inspectorAvatar.src = current.avatar || defaultAvatar(current.type);
+    inspectorAvatar.onerror = () => (inspectorAvatar.src = defaultAvatar(current.type));
+    inspectorStats.hidden = false;
+    inspectorHp.textContent = `HP: ${current.curHp}/${current.maxHp}`;
+
+    const condHtml =
+      current.conditions && current.conditions.length
+        ? current.conditions
+            .map(x => {
+              if (typeof x === "string") return `<span class="badge">${escapeHtml(x)}</span>`;
+              return `<span class="badge">${escapeHtml(x.name)} (${x.remaining})</span>`;
+            })
+            .join(" ")
+        : `<span class="badge">—</span>`;
+    inspectorConds.innerHTML = condHtml;
+  }
+
+  // Momentum
+  if (momentumText) {
+    const total = enc.roster.length;
+    const monstersLeft = enc.roster.filter(x => x.type === "monster" && !x.defeated && x.curHp > 0).length;
+    momentumText.textContent =
+      total === 0
+        ? "Add combatants to begin tracking."
+        : `Combatants: ${total} • Monsters left: ${monstersLeft}` + (enc.status === "running" ? ` • Round: ${enc.round}` : "");
+  }
+
+  // Library list
   libraryList.innerHTML = "";
   if (state.library.length === 0) {
     libraryList.innerHTML = `<div class="hint">No combatants yet. Add one above or import a campaign JSON.</div>`;
@@ -195,7 +350,7 @@ function render() {
         img.className = "avatar";
         img.alt = item.name;
         img.src = item.avatar || defaultAvatar(item.type);
-        img.onerror = () => img.src = defaultAvatar(item.type);
+        img.onerror = () => (img.src = defaultAvatar(item.type));
 
         const main = document.createElement("div");
         main.className = "itemMain";
@@ -231,167 +386,98 @@ function render() {
       });
   }
 
-  // status text
-  const enc = state.encounter;
-  const statusText = {
-    idle: "Encounter not started. Add combatants, roll initiative, then begin.",
-    ready: "Ready. Roll initiative if needed, then begin.",
-    running: "Running. Apply damage/conditions and move through turns.",
-    paused: "Paused. Resume by pressing Begin.",
-    ended: "Ended. Clear or build a new encounter."
-  }[enc.status] || "";
-
-  encStatus.textContent = statusText;
-
-   // Round & Momentum
-if (momentumText) {
-  const total = enc.roster.length;
-  const monstersLeft = enc.roster.filter(x => x.type === "monster" && !x.defeated && x.curHp > 0).length;
-
-  momentumText.textContent =
-    total === 0
-      ? "Add combatants to begin tracking."
-      : `Combatants: ${total} • Monsters left: ${monstersLeft}`;
-}
-
-  // button enablement
-
-  if (btnCompleteTurn) btnCompleteTurn.disabled = !(enc.status === "running");
-   
-    const enc = state.encounter;
-    if (enc.status !== "running") return;
-
-    // 1) Apply damage/heal + optional condition to the SELECTED target
-    applyDamageAndConditions(false);
-
-    // 2) Tick down conditions for the combatant whose turn just ended
-    const ended = enc.roster[enc.turnIndex];
-    tickDownConditionsForCombatant(ended);
-
-    // 3) Move to next living combatant
-    enc.turnIndex = findNextLivingIndex(enc, enc.turnIndex + 1);
-
-    saveState();
-    render();
-    checkAutoEnd();
-  });
-}
-  btnAddCondition.disabled = !(enc.status === "running");
-
-  // turn pill
-  if (enc.status !== "running" || enc.roster.length === 0) {
-    turnPill.textContent = (enc.status === "paused") ? "Paused" : "Not started";
+  // Encounter board (CENTER) – build as true 6-column grid rows
+  encList.innerHTML = "";
+  if (enc.roster.length === 0) {
+    encList.innerHTML = `<div class="hint">No one in the encounter yet. Select from Storage and add them.</div>`;
   } else {
-    const current = enc.roster[enc.turnIndex];
-    turnPill.textContent = current ? `${current.name} (Init ${current.init})` : "—";
-  }
+    enc.roster.forEach((c, idx) => {
+      const isCurrent = (enc.status === "running" && idx === enc.turnIndex);
 
-   const current = (enc.status === "running" && enc.roster.length > 0) ? enc.roster[enc.turnIndex] : null;
+      const row = document.createElement("div");
+      row.className =
+        "item" +
+        (isCurrent ? " currentTurn" : "") +
+        (c.defeated ? " defeatedRow" : "");
 
-if (!current) {
-  if (inspectorName) inspectorName.textContent = "No active turn";
-  if (inspectorMeta) inspectorMeta.textContent = "Start an encounter to see the active combatant.";
-  if (inspectorAvatar) inspectorAvatar.src = defaultAvatar("pc");
-  if (inspectorStats) inspectorStats.hidden = true;
-} else {
-  if (inspectorName) inspectorName.textContent = current.name;
-  if (inspectorMeta) inspectorMeta.textContent = `${current.type.toUpperCase()} • Init ${current.init ?? "—"}`;
-  if (inspectorAvatar) {
-    inspectorAvatar.src = current.avatar || defaultAvatar(current.type);
-    inspectorAvatar.onerror = () => inspectorAvatar.src = defaultAvatar(current.type);
-  }
-  if (inspectorStats) inspectorStats.hidden = false;
-  if (inspectorHp) inspectorHp.textContent = `HP: ${current.curHp}/${current.maxHp}`;
+      // Make the row a 6-col grid via CSS selectors you already have (.boardList .item uses grid)
+      // Children will match header columns:
+      // [avatar] [init] [name] [hp] [conditions] [actions]
 
-  const condHtml = (current.conditions && current.conditions.length)
-    ? current.conditions.map(x => {
-        if (typeof x === "string") return `<span class="badge">${escapeHtml(x)}</span>`;
-        return `<span class="badge">${escapeHtml(x.name)} (${x.remaining})</span>`;
-      }).join(" ")
-    : `<span class="badge">—</span>`;
+      row.addEventListener("click", () => {
+        state.ui.targetId = c.encId;
+        saveState();
+        render();
+      });
 
-  if (inspectorConds) inspectorConds.innerHTML = condHtml;
-}
+      // Avatar
+      const img = document.createElement("img");
+      img.className = "avatar";
+      img.alt = c.name;
+      img.src = c.avatar || defaultAvatar(c.type);
+      img.onerror = () => (img.src = defaultAvatar(c.type));
 
-  // encounter list
-encList.innerHTML = "";
-if (enc.roster.length === 0) {
-  encList.innerHTML = `<div class="hint">No one in the encounter yet. Select from Storage and add them.</div>`;
-} else {
-  enc.roster.forEach((c, idx) => {
-    const row = document.createElement("div");
-    const isCurrent = (enc.status === "running" && idx === enc.turnIndex);
-    row.className = "item" +
-      (isCurrent ? " currentTurn" : "") +
-      (c.defeated ? " defeatedRow" : "");
+      // Init
+      const initCell = document.createElement("div");
+      initCell.className = "boardCell";
+      initCell.textContent = c.init ?? "—";
 
-    row.addEventListener("click", () => {
-      targetSelect.value = c.encId;
-    });
-
-    // Avatar (this is your first column)
-    const img = document.createElement("img");
-    img.className = "avatar";
-    img.alt = c.name;
-    img.src = c.avatar || defaultAvatar(c.type);
-    img.onerror = () => img.src = defaultAvatar(c.type);
-
-    // Main cells (Init | Name | HP | Conditions)
-    const main = document.createElement("div");
-    main.className = "itemMain";
-
-    main.innerHTML = `
-      <div class="boardCell">${c.init ?? "—"}</div>
-
-      <div class="boardName">
+      // Name
+      const nameCell = document.createElement("div");
+      nameCell.className = "boardName";
+      nameCell.innerHTML = `
         <span class="nameText">${escapeHtml(c.name)}</span>
         ${c.defeated ? `<span class="badge defeated">DEFEATED</span>` : ""}
         <span class="badge ${c.type}">${c.type.toUpperCase()}</span>
-      </div>
+      `;
 
-      <div class="boardCell">${c.curHp}/${c.maxHp}</div>
+      // HP
+      const hpCell = document.createElement("div");
+      hpCell.className = "boardCell";
+      hpCell.textContent = `${c.curHp}/${c.maxHp}`;
 
-      <div class="boardConds">
-        ${
-          (c.conditions && c.conditions.length)
-  ? c.conditions.map(x => {
-      if (typeof x === "string") return `<span class="badge">${escapeHtml(x)}</span>`;
-      return `<span class="badge">${escapeHtml(x.name)} (${x.remaining})</span>`;
-    }).join(" ")
-  : `<span class="badge">—</span>`
-        }
-      </div>
-    `;
+      // Conditions
+      const condCell = document.createElement("div");
+      condCell.className = "boardConds";
+      condCell.innerHTML =
+        (c.conditions && c.conditions.length)
+          ? c.conditions.map(x => {
+              if (typeof x === "string") return `<span class="badge">${escapeHtml(x)}</span>`;
+              return `<span class="badge">${escapeHtml(x.name)} (${x.remaining})</span>`;
+            }).join(" ")
+          : `<span class="badge">—</span>`;
 
-    // Actions column (Remove)
-    const actions = document.createElement("div");
-    actions.className = "boardActionsCell";
+      // Actions (Remove)
+      const actions = document.createElement("div");
+      actions.className = "boardActionsCell";
 
-    const remove = document.createElement("button");
-    remove.className = "btn ghost";
-    remove.textContent = "Remove";
-    remove.disabled = (enc.status === "running");
-    remove.addEventListener("click", (e) => {
-      e.stopPropagation();
-      enc.roster = enc.roster.filter(x => x.encId !== c.encId);
-      normalizeEncounterAfterRosterChange();
-      saveState();
-      render();
+      const remove = document.createElement("button");
+      remove.className = "btn ghost";
+      remove.textContent = "Remove";
+      remove.disabled = (enc.status === "running");
+      remove.addEventListener("click", (e) => {
+        e.stopPropagation();
+        enc.roster = enc.roster.filter(x => x.encId !== c.encId);
+        normalizeEncounterAfterRosterChange();
+        saveState();
+        render();
+      });
+
+      actions.appendChild(remove);
+
+      row.appendChild(img);
+      row.appendChild(initCell);
+      row.appendChild(nameCell);
+      row.appendChild(hpCell);
+      row.appendChild(condCell);
+      row.appendChild(actions);
+
+      encList.appendChild(row);
     });
+  }
 
-    actions.appendChild(remove);
-
-    // Put all 6 columns into the row
-    row.appendChild(img);
-    row.appendChild(main);
-    row.appendChild(actions);
-
-    // IMPORTANT: actually insert the row into the DOM
-    encList.appendChild(row);
-  });
-}
-
-  // target dropdown
+  // Target dropdown (preserve selection)
+  const previous = state.ui.targetId || targetSelect.value || null;
   targetSelect.innerHTML = "";
   enc.roster.forEach(c => {
     const opt = document.createElement("option");
@@ -400,18 +486,18 @@ if (enc.roster.length === 0) {
     targetSelect.appendChild(opt);
   });
 
-  if (enc.roster.length > 0) {
-    const exists = enc.roster.some(x => x.encId === targetSelect.value);
-    if (!exists) targetSelect.value = enc.roster[0].encId;
-  }
+  // Restore target if possible
+  const valid = enc.roster.some(x => x.encId === previous);
+  const fallback = enc.roster.length ? enc.roster[0].encId : "";
+  targetSelect.value = valid ? previous : fallback;
+  state.ui.targetId = targetSelect.value || null;
 
-  // Saved encounters list (for Encounters tab)
+  // Saved encounters list
   if (savedEncountersList) {
     savedEncountersList.innerHTML = "";
 
-    if (!state.savedEncounters || state.savedEncounters.length === 0) {
-      savedEncountersList.innerHTML =
-        `<div class="hint">No saved encounters yet. Save one from an active roster.</div>`;
+    if (!state.savedEncounters.length) {
+      savedEncountersList.innerHTML = `<div class="hint">No saved encounters yet. Save one from an active roster.</div>`;
     } else {
       state.savedEncounters
         .slice()
@@ -443,14 +529,23 @@ if (enc.roster.length === 0) {
 
             state.encounter.name = se.name || "";
             state.encounter.roster = (se.roster || []).map(x => ({
-              ...x,
               encId: uid(),
+              baseId: x.baseId || null,
+              name: x.name,
+              type: x.type,
+              maxHp: x.maxHp,
               curHp: x.maxHp,
+              init: x.init ?? null,
+              avatar: x.avatar || "",
               conditions: [],
               defeated: false
             }));
             state.encounter.turnIndex = 0;
+            state.encounter.round = 1;
             state.encounter.status = "ready";
+
+            // Set target to first
+            state.ui.targetId = state.encounter.roster[0]?.encId || null;
 
             saveState();
             render();
@@ -491,10 +586,30 @@ if (enc.roster.length === 0) {
         });
     }
   }
-} // ✅ closes render()
+}
 
-/* ---------- Library actions ---------- */
-btnAddToLibrary.addEventListener("click", () => {
+/* ---------- Tabs ---------- */
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".tabPanel").forEach(p => p.classList.remove("active"));
+    tab.classList.add("active");
+    el(`tab-${tab.dataset.tab}`).classList.add("active");
+  });
+});
+
+/* ---------- Event listeners (ONCE) ---------- */
+targetSelect?.addEventListener("change", () => {
+  state.ui.targetId = targetSelect.value || null;
+  saveState();
+});
+
+el("encName")?.addEventListener("input", (e) => {
+  state.encounter.name = e.target.value;
+  saveState();
+});
+
+btnAddToLibrary?.addEventListener("click", () => {
   const name = el("newName").value.trim();
   const type = el("newType").value;
   const maxHp = Number(el("newMaxHp").value);
@@ -527,7 +642,7 @@ btnAddToLibrary.addEventListener("click", () => {
   render();
 });
 
-btnAddSelected.addEventListener("click", () => {
+btnAddSelected?.addEventListener("click", () => {
   const ids = Array.from(state.selectedLibraryIds);
   if (ids.length === 0) {
     alert("Select one or more combatants from Storage first.");
@@ -535,6 +650,7 @@ btnAddSelected.addEventListener("click", () => {
   }
 
   const enc = state.encounter;
+
   ids.forEach(id => {
     const base = state.library.find(x => x.id === id);
     if (!base) return;
@@ -554,26 +670,28 @@ btnAddSelected.addEventListener("click", () => {
   });
 
   enc.status = "ready";
+  enc.turnIndex = 0;
+  enc.round = 1;
+
+  // Default target = first roster member
+  state.ui.targetId = enc.roster[0]?.encId || null;
+
   saveState();
   render();
 });
 
-btnClearEncounter.addEventListener("click", () => {
+btnClearEncounter?.addEventListener("click", () => {
   if (!confirm("Clear the encounter roster?")) return;
   state.encounter.roster = [];
   state.encounter.turnIndex = 0;
+  state.encounter.round = 1;
   state.encounter.status = "idle";
+  state.ui.targetId = null;
   saveState();
   render();
 });
 
-el("encName").addEventListener("input", (e) => {
-  state.encounter.name = e.target.value;
-  saveState();
-});
-
-/* ---------- Initiative + Encounter flow ---------- */
-btnAutoInit.addEventListener("click", () => {
+btnAutoInit?.addEventListener("click", () => {
   const enc = state.encounter;
 
   enc.roster.forEach(c => {
@@ -584,141 +702,115 @@ btnAutoInit.addEventListener("click", () => {
 
   enc.roster.sort((a, b) => (b.init - a.init) || a.name.localeCompare(b.name));
   enc.turnIndex = 0;
+  enc.round = 1;
   enc.status = "ready";
+
+  // Keep target valid
+  state.ui.targetId = enc.roster[0]?.encId || null;
+
   saveState();
   render();
 });
 
-btnBegin.addEventListener("click", () => {
+btnBegin?.addEventListener("click", () => {
   const enc = state.encounter;
-  if (enc.roster.length === 0) return;
+  if (!enc.roster.length) return;
 
   enc.roster.forEach(c => { if (c.init == null) c.init = 0; });
   enc.roster.sort((a, b) => (b.init - a.init) || a.name.localeCompare(b.name));
 
   enc.status = "running";
-  enc.turnIndex = findNextLivingIndex(enc, enc.turnIndex);
+  enc.turnIndex = findNextLivingIndex(enc, 0);
+  enc.round = 1;
+
+  // Active turn becomes default target unless user picks someone else
+  if (!state.ui.targetId) state.ui.targetId = enc.roster[enc.turnIndex]?.encId || null;
 
   saveState();
   render();
   checkAutoEnd();
 });
 
-btnPause.addEventListener("click", () => {
+btnPause?.addEventListener("click", () => {
   state.encounter.status = "paused";
   saveState();
   render();
 });
 
-btnEnd.addEventListener("click", () => {
+btnEnd?.addEventListener("click", () => {
   state.encounter.status = "ended";
   saveState();
   render();
 });
 
-function findNextLivingIndex(enc, startIndex) {
-  if (enc.roster.length === 0) return 0;
+btnAddCondition?.addEventListener("click", () => {
+  // Add condition only to selected target (does not advance turn)
+  if (state.encounter.status !== "running") return;
+  applyDamageAndMaybeCondition({ conditionOnly: true });
+  saveState();
+  render();
+  checkAutoEnd();
+});
 
-  let idx = ((startIndex % enc.roster.length) + enc.roster.length) % enc.roster.length;
-  for (let i = 0; i < enc.roster.length; i++) {
-    const c = enc.roster[idx];
-    if (c && !c.defeated) return idx;
-    idx = (idx + 1) % enc.roster.length;
-  }
-  return 0;
-}
-
-  const monstersLeft = enc.roster.filter(x => x.type === "monster" && !x.defeated && x.curHp > 0).length;
-
-  // Simple round estimate: every time turnIndex wraps to 0, it's a new round.
-  // We'll approximate using turnIndex and total.
-  const round = (enc.status === "running" && total > 0)
-    ? (Math.floor(enc.turnIndex / total) + 1)
-    : 0;
-
-  momentumText.textContent =
-    total === 0
-      ? "Add combatants to begin tracking."
-      : `Combatants: ${total} • Monsters left: ${monstersLeft}` + (round ? ` • Round: ${round}` : "");
-}
-
-/* ---------- Damage + Conditions ---------- */
-if (btnAddCondition) btnAddCondition.addEventListener("click", () => applyDamageAndConditions(true));
-
-function applyDamageAndConditions(conditionOnly) {
+btnCompleteTurn?.addEventListener("click", () => {
   const enc = state.encounter;
   if (enc.status !== "running") return;
 
-  const targetId = targetSelect.value;
-  const target = enc.roster.find(x => x.encId === targetId);
-  if (!target) return;
+  // 1) Apply to selected target (damage + optional condition)
+  applyDamageAndMaybeCondition({ conditionOnly: false });
 
-  if (!conditionOnly) {
-    const dmgRaw = damageInput.value.trim();
-    if (dmgRaw !== "") {
-      const dmg = Number(dmgRaw);
-      if (!Number.isFinite(dmg)) {
-        alert("Damage must be a number.");
-        return;
-      }
-      const nextHp = clamp(target.curHp - Math.floor(dmg), 0, target.maxHp);
-      target.curHp = nextHp;
-      damageInput.value = "";
-    }
+  // 2) Tick down conditions for combatant whose turn just ended
+  const ended = enc.roster[enc.turnIndex];
+  tickDownConditionsForCombatant(ended);
+
+  // 3) Move to next living combatant
+  const prevIndex = enc.turnIndex;
+  enc.turnIndex = findNextLivingIndex(enc, enc.turnIndex + 1);
+
+  // Round increments when we wrap past the end (rough but correct for a simple tracker)
+  if (enc.roster.length && enc.turnIndex <= prevIndex) {
+    enc.round = (Number.isFinite(enc.round) ? enc.round : 1) + 1;
   }
 
-  const cond = conditionInput.value.trim();
-if (cond) {
-  const turnsRaw = conditionTurns?.value?.trim();
-  const turns = turnsRaw === "" ? 1 : Number(turnsRaw);
-
-  if (!Number.isFinite(turns) || turns < 1) {
-    alert("Turns must be 1 or more.");
-    return;
+  // If target was the combatant who just got removed/defeated, keep target valid
+  if (!enc.roster.some(x => x.encId === state.ui.targetId)) {
+    state.ui.targetId = enc.roster[enc.turnIndex]?.encId || enc.roster[0]?.encId || null;
   }
-
-  target.conditions = Array.isArray(target.conditions) ? target.conditions : [];
-
-  // If condition already exists, refresh its timer
-  const existing = target.conditions.find(x => (typeof x === "object" ? x.name : x) === cond);
-  if (existing && typeof existing === "object") {
-    existing.remaining = Math.floor(turns);
-  } else if (!existing) {
-    target.conditions.push({ name: cond, remaining: Math.floor(turns) });
-  }
-
-  conditionInput.value = "";
-  if (conditionTurns) conditionTurns.value = "";
-}
-
-  if (target.curHp <= 0) target.defeated = true;
 
   saveState();
   render();
   checkAutoEnd();
-   } // end function applyDamageAndConditions
+});
 
-
-function normalizeEncounterAfterRosterChange() {
+btnSaveEncounter?.addEventListener("click", () => {
   const enc = state.encounter;
-  enc.turnIndex = clamp(enc.turnIndex, 0, Math.max(0, enc.roster.length - 1));
-  if (enc.roster.length === 0) enc.status = "idle";
-}
 
-function checkAutoEnd() {
-  const enc = state.encounter;
-  if (enc.status !== "running") return;
-
-  const monsters = enc.roster.filter(x => x.type === "monster");
-  if (monsters.length === 0) return;
-
-  const allDefeated = monsters.every(m => m.defeated || m.curHp <= 0);
-  if (allDefeated) {
-    enc.status = "ended";
-    saveState();
-    render();
+  if (!enc.roster || enc.roster.length === 0) {
+    alert("Add combatants to the encounter first, then save.");
+    return;
   }
-}
+
+  const name = (enc.name || "").trim() || `Encounter ${state.savedEncounters.length + 1}`;
+
+  const snapshot = {
+    id: uid(),
+    name,
+    updatedAt: new Date().toISOString(),
+    roster: enc.roster.map(c => ({
+      baseId: c.baseId || null,
+      name: c.name,
+      type: c.type,
+      maxHp: c.maxHp,
+      init: c.init ?? null,
+      avatar: c.avatar || ""
+    }))
+  };
+
+  state.savedEncounters.push(snapshot);
+  saveState();
+  render();
+  alert(`Saved: ${name}`);
+});
 
 /* ---------- Import / Export JSON ---------- */
 function exportCampaignJson() {
@@ -729,7 +821,7 @@ function exportCampaignJson() {
   };
 }
 
-btnExportJson.addEventListener("click", () => {
+btnExportJson?.addEventListener("click", () => {
   const data = exportCampaignJson();
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
@@ -739,7 +831,7 @@ btnExportJson.addEventListener("click", () => {
   URL.revokeObjectURL(a.href);
 });
 
-btnImportJson.addEventListener("click", async () => {
+btnImportJson?.addEventListener("click", async () => {
   const file = el("importJson").files?.[0];
   if (!file) { alert("Choose a JSON file first."); return; }
 
@@ -757,12 +849,13 @@ btnImportJson.addEventListener("click", async () => {
   parsed.library.forEach(x => {
     const key = `${x.name}|${x.type}|${x.maxHp}`;
     if (!existingKey.has(key)) {
+      const maxHp = Math.floor(Number(x.maxHp) || 1);
       state.library.push({
         id: uid(),
         name: x.name,
         type: x.type,
-        maxHp: Math.floor(Number(x.maxHp) || 1),
-        curHp: Math.floor(Number(x.maxHp) || 1),
+        maxHp,
+        curHp: maxHp,
         initBonus: (x.initBonus == null ? null : Math.floor(Number(x.initBonus))),
         avatar: x.avatar || ""
       });
@@ -776,7 +869,7 @@ btnImportJson.addEventListener("click", async () => {
 });
 
 /* ---------- PDF Import (basic) ---------- */
-btnImportPdf.addEventListener("click", async () => {
+btnImportPdf?.addEventListener("click", async () => {
   const file = el("importPdf").files?.[0];
   if (!file) { alert("Choose a PDF first."); return; }
   if (!window.pdfjsLib) { alert("pdf.js failed to load."); return; }
@@ -827,7 +920,7 @@ btnImportPdf.addEventListener("click", async () => {
 });
 
 /* ---------- Reset ---------- */
-btnResetAll.addEventListener("click", () => {
+btnResetAll?.addEventListener("click", () => {
   if (!confirm("This will wipe your library and encounter data from this device/browser. Continue?")) return;
   localStorage.removeItem(STORAGE_KEY);
   location.reload();
@@ -840,15 +933,13 @@ window.addEventListener("beforeinstallprompt", (e) => {
   deferredPrompt = e;
   if (btnInstall) btnInstall.hidden = false;
 });
-if (btnInstall) {
-  btnInstall.addEventListener("click", async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    deferredPrompt = null;
-    btnInstall.hidden = true;
-  });
-}
+btnInstall?.addEventListener("click", async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  btnInstall.hidden = true;
+});
 
 /* ---------- Service worker ---------- */
 if ("serviceWorker" in navigator) {
@@ -862,41 +953,4 @@ if ("serviceWorker" in navigator) {
 }
 
 /* ---------- Boot ---------- */
-if (!btnSaveEncounter) {
-  console.warn("Save Encounter button not found (btnSaveEncounter is null). Check index.html id='btnSaveEncounter'.");
-} else {
-  btnSaveEncounter.addEventListener("click", () => {
-    const enc = state.encounter;
-
-    if (!enc.roster || enc.roster.length === 0) {
-      alert("Add combatants to the encounter first, then save.");
-      return;
-    }
-
-    const name = (enc.name || "").trim() || `Encounter ${state.savedEncounters.length + 1}`;
-
-    const snapshot = {
-      id: uid(),
-      name,
-      updatedAt: new Date().toISOString(),
-      roster: enc.roster.map(c => ({
-        baseId: c.baseId || null,
-        name: c.name,
-        type: c.type,
-        maxHp: c.maxHp,
-        curHp: c.maxHp,
-        init: c.init ?? null,
-        avatar: c.avatar || "",
-        conditions: [],       // resets on load
-        defeated: false       // resets on load
-      }))
-    };
-
-    state.savedEncounters.push(snapshot);
-    saveState();
-    render();
-    alert(`Saved: ${name}`);
-  });
-}
-
 render();
