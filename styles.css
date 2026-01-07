@@ -499,6 +499,27 @@ boardList .avatar{
   line-height: 1.1;
 }
 
+/* --- Saved encounters list: stop overlap --- */
+#savedEncountersList .item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+#savedEncountersList .itemMain .itemMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+#savedEncountersList .itemActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 /* if your CSS currently forces ellipsis somewhere, this helps override */
 .boardName {
   min-width: 0;
