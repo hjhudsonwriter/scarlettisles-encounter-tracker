@@ -12,6 +12,15 @@ const mapImage = el("mapImage");
 const tokenLayer = el("tokenLayer");
 const marquee = el("marquee");
 const vttStatus = el("vttStatus");
+const btnZoomOut = el("btnZoomOut");
+const btnZoomIn = el("btnZoomIn");
+const btnZoomReset = el("btnZoomReset");
+
+const btnTokSm = el("btnTokSm");
+const btnTokLg = el("btnTokLg");
+
+const btnFullscreen = el("btnFullscreen");
+const btnToggleMonsters = el("btnToggleMonsters");
 
 function defaultAvatar(type) {
   const fill = type === "pc" ? "#c9a227" : "#7a0f1a";
@@ -43,20 +52,40 @@ function saveMap(dataUrl) {
 // VTT runtime state (camera + token positions)
 function loadVttState() {
   const raw = localStorage.getItem(VTT_STATE_KEY);
-  if (!raw) {
-    return {
-      camera: { x: 0, y: 0, zoom: 1 },
-      tokenPos: {} // encId -> { x: 0..1, y: 0..1 } normalized to mapWorld box
-    };
+
+  // default
+  const fallback = {
+    camera: { x: 0, y: 0, zoom: 1 },
+    tokenPos: {},        // encId -> {x,y} normalized
+    tokenSize: 56,
+    hideMonsters: false
+  };
+
+  if (!raw) return fallback;
+
+  try {
+    const s = JSON.parse(raw) || {};
+    s.camera ||= fallback.camera;
+    s.tokenPos ||= {};
+    s.tokenSize ??= 56;
+    s.hideMonsters ??= false;
+    return s;
+  } catch {
+    return fallback;
   }
+}
   try {
     const s = JSON.parse(raw);
     s.camera ||= { x: 0, y: 0, zoom: 1 };
     s.tokenPos ||= {};
     return s;
   } catch {
-    return { camera: { x: 0, y: 0, zoom: 1 }, tokenPos: {} };
-  }
+    return {
+  camera: { x: 0, y: 0, zoom: 1 },
+  tokenPos: {},
+  tokenSize: 56,
+  hideMonsters: false
+};
 }
 
 function saveVttState() {
@@ -64,6 +93,8 @@ function saveVttState() {
 }
 
 let vttState = loadVttState();
+  s.tokenSize ??= 56;
+s.hideMonsters ??= false;
 
 // ---------- Camera / world transform ----------
 function applyCamera() {
@@ -73,15 +104,27 @@ function applyCamera() {
   saveVttState();
 }
 
+  function applyTokenSize() {
+  const size = Number(vttState.tokenSize) || 56;
+  mapStage.style.setProperty("--tokenSize", `${clamp(size, 24, 140)}px`);
+  saveVttState();
+}
+
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
 
+function worldDims() {
+  const zoom = vttState.camera.zoom || 1;
+  return {
+    w: (mapStage.clientWidth || 1) / zoom,
+    h: (mapStage.clientHeight || 1) / zoom,
+    zoom
+  };
+}
+
 function clampTokenToStage(px, py, tokenSize) {
-  // Constrain inside the visible mapStage bounds, IN WORLD SPACE.
-  // mapWorld is same size as mapStage (inset 0), so use mapStage client box.
-  const w = mapStage.clientWidth;
-  const h = mapStage.clientHeight;
+  const { w, h } = worldDims();
   return {
     x: clamp(px, 0, Math.max(0, w - tokenSize)),
     y: clamp(py, 0, Math.max(0, h - tokenSize))
@@ -89,14 +132,12 @@ function clampTokenToStage(px, py, tokenSize) {
 }
 
 function pxToNorm(px, py) {
-  const w = mapStage.clientWidth || 1;
-  const h = mapStage.clientHeight || 1;
+  const { w, h } = worldDims();
   return { x: px / w, y: py / h };
 }
 
 function normToPx(nx, ny) {
-  const w = mapStage.clientWidth || 1;
-  const h = mapStage.clientHeight || 1;
+  const { w, h } = worldDims();
   return { x: nx * w, y: ny * h };
 }
 
@@ -182,6 +223,11 @@ function renderTokens() {
 
     token.appendChild(img);
     token.appendChild(label);
+    if (vttState.hideMonsters && c.type === "monster") {
+  token.classList.add("isHidden");
+}
+  renderTokens();
+});
 
     // position from normalized state
     const pos = vttState.tokenPos[c.encId] || { x: 0.1, y: 0.1 };
@@ -334,10 +380,10 @@ mapStage.addEventListener("pointerdown", (e) => {
     e.preventDefault();
   } else {
     // Click empty space clears selection
-    if (!e.ctrlKey) {
-      // don’t clear if click hits a token
-      if (!(e.target && String(e.target.className || "").includes("token"))) clearSelected();
-    }
+if (!e.ctrlKey) {
+  const hitToken = e.target && e.target.closest && e.target.closest(".token");
+  if (!hitToken) clearSelected();
+}
   }
 });
 
@@ -441,6 +487,55 @@ mapStage.addEventListener("pointerup", () => {
   renderTokens();
 });
 
+// ---------- Buttons (bind once) ----------
+btnZoomIn?.addEventListener("click", () => {
+  vttState.camera.zoom = clamp((vttState.camera.zoom || 1) + 0.15, 0.5, 3);
+  applyCamera();
+  renderTokens();
+});
+
+btnZoomOut?.addEventListener("click", () => {
+  vttState.camera.zoom = clamp((vttState.camera.zoom || 1) - 0.15, 0.5, 3);
+  applyCamera();
+  renderTokens();
+});
+
+btnZoomReset?.addEventListener("click", () => {
+  vttState.camera.zoom = 1;
+  vttState.camera.x = 0;
+  vttState.camera.y = 0;
+  applyCamera();
+  renderTokens();
+});
+
+btnTokLg?.addEventListener("click", () => {
+  vttState.tokenSize = clamp((vttState.tokenSize || 56) + 8, 24, 140);
+  applyTokenSize();
+  renderTokens();
+});
+
+btnTokSm?.addEventListener("click", () => {
+  vttState.tokenSize = clamp((vttState.tokenSize || 56) - 8, 24, 140);
+  applyTokenSize();
+  renderTokens();
+});
+
+btnFullscreen?.addEventListener("click", async () => {
+  if (!document.fullscreenElement) await mapStage.requestFullscreen();
+  else await document.exitFullscreen();
+});
+
+btnToggleMonsters?.addEventListener("click", () => {
+  vttState.hideMonsters = !vttState.hideMonsters;
+  btnToggleMonsters.textContent = vttState.hideMonsters ? "Show monsters" : "Hide monsters";
+  saveVttState();
+  renderTokens();
+});
+
+document.addEventListener("fullscreenchange", () => {
+  renderTokens();
+});
+
 // ---------- Keep things stable on resize / fullscreen ----------
 const ro = new ResizeObserver(() => {
   // Token coords are normalized, so re-render places them correctly in new size
@@ -464,9 +559,14 @@ function hydrateFromTracker() {
   const name = enc?.name || "(unnamed encounter)";
   if (vttStatus) vttStatus.textContent = `Showing tokens for: ${name}`;
 
+  if (btnToggleMonsters) {
+    btnToggleMonsters.textContent = vttState.hideMonsters ? "Show monsters" : "Hide monsters";
+  }
+
   ensureDefaultPositions();
   renderTokens();
 }
 
 applyCamera();
+applyTokenSize();
 hydrateFromTracker();
