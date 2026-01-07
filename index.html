@@ -191,10 +191,19 @@
 
     <!-- RIGHT: INSPECTOR / ACTIONS -->
     <aside class="panel inspector">
-      <div class="panelHead">
-        <h2>No Combatant Selected</h2>
-        <p>Apply damage, healing, and conditions.</p>
-      </div>
+      <div class="panelHead" id="inspectorHead">
+  <div class="inspectorTop">
+    <img id="inspectorAvatar" class="avatar" alt="" />
+    <div>
+      <h2 id="inspectorName">No active turn</h2>
+      <p class="muted" id="inspectorMeta">Start an encounter to see the active combatant.</p>
+    </div>
+  </div>
+  <div class="inspectorStats" id="inspectorStats" hidden>
+    <div class="pill" id="inspectorHp"></div>
+    <div class="inspectorConds" id="inspectorConds"></div>
+  </div>
+</div>
 
       <div class="subcard">
         <div class="field">
