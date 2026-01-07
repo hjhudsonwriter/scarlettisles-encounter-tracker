@@ -86,6 +86,7 @@ function render() {
       row.className = "item";
 
       row.innerHTML = `
+      <div id="tokenList"></div>
         <div class="tokenListRow">
           <img src="${c.avatar || defaultAvatar(c.type)}" alt="">
           <div>
