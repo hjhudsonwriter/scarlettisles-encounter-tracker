@@ -598,3 +598,24 @@ boardList .avatar{
   margin: 0 !important;
   max-width: 100% !important;
 }
+
+   /* ===== Fix center board name cutoff ===== */
+
+.boardList .itemMain {
+  display: grid !important;
+  grid-template-columns: 70px minmax(260px, 1fr) 120px minmax(220px, 1fr) !important;
+  gap: 12px !important;
+  align-items: center !important;
+  min-width: 0 !important;
+}
+
+.boardName {
+  min-width: 0 !important;
+}
+
+.boardName .nameText {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  word-break: break-word !important;
+}
