@@ -452,3 +452,23 @@ input:focus, select:focus{
   opacity: .75;
   filter: grayscale(.2);
 }
+
+/* ===== Background logo behind panels ===== */
+
+body {
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("./logo.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  opacity: 0.12;        /* tweak: 0.06–0.18 */
+  filter: blur(0px);    /* optional: blur(1px) */
+  pointer-events: none;
+  z-index: -1;
+}
