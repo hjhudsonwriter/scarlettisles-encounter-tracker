@@ -211,12 +211,18 @@
         </div>
 
         <div class="row">
-          <div class="field grow">
-            <label>Add Condition</label>
-            <input id="conditionInput" placeholder="e.g. Grappled" />
-          </div>
-          <button class="btn ghost" id="btnAddCondition">Add</button>
-        </div>
+  <div class="field grow">
+    <label>Add Condition</label>
+    <input id="conditionInput" placeholder="e.g. Blinded" />
+  </div>
+
+  <div class="field" style="max-width:120px">
+    <label>Turns</label>
+    <input id="conditionTurns" type="number" min="1" step="1" placeholder="2" />
+  </div>
+
+  <button class="btn ghost" id="btnAddCondition">Add</button>
+</div>
 
         <div class="row">
           <button class="btn" id="btnApplyDamage">Apply</button>
