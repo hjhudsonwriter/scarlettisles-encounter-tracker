@@ -66,6 +66,13 @@ body{
   border-bottom: 1px solid var(--line);
 }
 
+.brandLogo {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
 .brand{display:flex; align-items:center; gap:12px}
 .brandMark{
   width:44px;height:44px;
