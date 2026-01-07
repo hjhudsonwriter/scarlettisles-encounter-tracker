@@ -154,6 +154,7 @@ const btnImportJson = el("btnImportJson");
 const btnImportPdf = el("btnImportPdf");
 const btnResetAll = el("btnResetAll");
 const btnInstall = el("btnInstall");
+const btnOpenVtt = el("btnOpenVtt");
 
 const damageInput = el("damageInput");
 const conditionInput = el("conditionInput");
@@ -638,6 +639,10 @@ targetSelect?.addEventListener("change", () => {
 el("encName")?.addEventListener("input", (e) => {
   state.encounter.name = e.target.value;
   saveState();
+});
+
+btnOpenVtt?.addEventListener("click", () => {
+  window.open("./vtt.html", "ScarlettVTT", "popup=yes,width=1400,height=900");
 });
 
 btnAddToLibrary.addEventListener("click", () => {
