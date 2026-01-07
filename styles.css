@@ -368,6 +368,25 @@ input:focus, select:focus{
   padding: 10px 14px 14px 14px;
 }
 
+/* Give the centre panel list a bit more breathing room on the right */
+.boardList { 
+  padding-right: 24px; 
+}
+
+/* Let the conditions cell use its full width properly */
+.boardConds {
+  min-width: 0;
+  padding-right: 10px; /* keeps badges away from the panel edge */
+}
+
+/* Make long condition badges ellipsis instead of “half-hidden letters” */
+.boardConds .badge {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Encounter row: Avatar | Init | Name | HP | Conditions | Actions */
 .boardList .item{
   display:grid;
