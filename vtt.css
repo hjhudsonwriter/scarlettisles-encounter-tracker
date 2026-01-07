@@ -57,7 +57,11 @@ body.vtt .btn.ghost:hover {
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(0,0,0,0.35);
+    background:
+    radial-gradient(800px 500px at 50% 40%, rgba(122,15,26,0.16), transparent 65%),
+    radial-gradient(900px 600px at 50% 70%, rgba(201,162,39,0.10), transparent 70%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0 6px, rgba(255,255,255,0.00) 6px 12px),
+    rgba(0,0,0,0.55);
 }
 
 /* We scale this wrapper for map zoom */
@@ -117,6 +121,16 @@ body.vtt .btn.ghost:hover {
 /* Hidden tokens (DM hide) */
 .token.isHidden {
   opacity: 0;
+  pointer-events: none;
+}
+
+/* Selection box (Ctrl+drag) */
+#marquee {
+  position: absolute;
+  border: 1px solid rgba(201,162,39,0.55);
+  background: rgba(201,162,39,0.12);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.35) inset;
+  border-radius: 8px;
   pointer-events: none;
 }
 
