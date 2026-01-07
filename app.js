@@ -120,10 +120,9 @@ const btnAutoInit = el("btnAutoInit");
 const btnBegin = el("btnBegin");
 const btnPause = el("btnPause");
 const btnEnd = el("btnEnd");
-const btnNextTurn = el("btnNextTurn");
-const btnApplyDamage = el("btnApplyDamage");
 const btnAddCondition = el("btnAddCondition");
 const conditionTurns = el("conditionTurns");
+const btnCompleteTurn = el("btnCompleteTurn");
 const btnExportJson = el("btnExportJson");
 const btnImportJson = el("btnImportJson");
 const btnImportPdf = el("btnImportPdf");
@@ -248,8 +247,31 @@ function render() {
   btnEnd.disabled = !(enc.status === "running" || enc.status === "paused");
   btnBegin.disabled = !(enc.roster.length > 0) || (enc.status === "running");
   btnAutoInit.disabled = !(enc.roster.length > 0) || (enc.status === "running");
-  btnNextTurn.disabled = !(enc.status === "running");
-  btnApplyDamage.disabled = !(enc.status === "running");
+  if (btnCompleteTurn) btnCompleteTurn.disabled = !(enc.status === "running");
+   if (btnCompleteTurn) {
+  btnCompleteTurn.addEventListener("click", () => {
+    const enc = state.encounter;
+    if (enc.status !== "running") return;
+
+    // Force target to current combatant (keeps things simple)
+    const current = enc.roster[enc.turnIndex];
+    if (!current) return;
+    targetSelect.value = current.encId;
+
+    // Apply damage + condition (uses your existing function)
+    applyDamageAndConditions(false);
+
+    // Tick conditions for the combatant who just finished their turn
+    tickDownConditionsForCombatant(current);
+
+    // Advance turn
+    enc.turnIndex = findNextLivingIndex(enc, enc.turnIndex + 1);
+
+    saveState();
+    render();
+    checkAutoEnd();
+  });
+}
   btnAddCondition.disabled = !(enc.status === "running");
 
   // turn pill
