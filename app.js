@@ -633,6 +633,22 @@ function findNextLivingIndex(enc, startIndex) {
   }
   return 0;
 }
+const momentumText = el("momentumText");
+if (momentumText) {
+  const total = enc.roster.length;
+  const monstersLeft = enc.roster.filter(x => x.type === "monster" && !x.defeated && x.curHp > 0).length;
+
+  // Simple round estimate: every time turnIndex wraps to 0, it's a new round.
+  // We'll approximate using turnIndex and total.
+  const round = (enc.status === "running" && total > 0)
+    ? (Math.floor(enc.turnIndex / total) + 1)
+    : 0;
+
+  momentumText.textContent =
+    total === 0
+      ? "Add combatants to begin tracking."
+      : `Combatants: ${total} • Monsters left: ${monstersLeft}` + (round ? ` • Round: ${round}` : "");
+}
 
 /* ---------- Damage + Conditions ---------- */
 btnApplyDamage.addEventListener("click", () => applyDamageAndConditions(false));
