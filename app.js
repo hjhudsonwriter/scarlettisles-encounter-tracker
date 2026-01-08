@@ -371,17 +371,7 @@ function render() {
     inspectorAvatar.onerror = () => (inspectorAvatar.src = defaultAvatar(current.type));
     inspectorStats.hidden = false;
     inspectorHp.textContent = `HP: ${current.curHp}/${current.maxHp}`;
-     // Stat block link button (monsters only)
-if (btnOpenStatBlock) {
-  const link = (current.type === "monster" && current.refLink) ? current.refLink : "";
-  if (link) {
-    btnOpenStatBlock.href = link;
-    btnOpenStatBlock.hidden = false;
-  } else {
-    btnOpenStatBlock.href = "#";
-    btnOpenStatBlock.hidden = true;
-  }
-}
+     
      // Stat block link button (monsters only)
 if (btnOpenStatBlock) {
   const link =
