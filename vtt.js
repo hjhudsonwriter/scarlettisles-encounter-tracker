@@ -336,9 +336,6 @@ function updatePersistentFogFromPCs() {
 
   saveVttState();
 }
-// ---------- Fog of War (persistent reveal) ----------
-let fogCanvas = null;
-let fogCtx = null;
 
 // This stores what has been revealed, and it PERSISTS.
 let fogMask = null;      // OffscreenCanvas or <canvas>
