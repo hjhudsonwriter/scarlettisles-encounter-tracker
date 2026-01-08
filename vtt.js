@@ -275,10 +275,13 @@ function enableTokenInput(tokenEl) {
     // Capture pointer on the actual clicked element (img/label), otherwise Chrome can throw InvalidStateError
 const captureEl = (e.target && typeof e.target.setPointerCapture === "function") ? e.target : tokenEl;
 
+let captureOk = false;
+
 try {
   captureEl.setPointerCapture(e.pointerId);
+  captureOk = true;
 } catch (err) {
-  // If capture fails for any reason, we can still drag using move events without capture.
+  captureOk = false;
 }
 
 const onMove = (ev) => {
@@ -304,15 +307,19 @@ const onMove = (ev) => {
 };
 
 const onUp = () => {
-  captureEl.removeEventListener("pointermove", onMove);
-captureEl.removeEventListener("pointerup", onUp);
-captureEl.removeEventListener("pointercancel", onUp);
+const listenEl = captureOk ? captureEl : window;
+
+listenEl.removeEventListener("pointermove", onMove);
+listenEl.removeEventListener("pointerup", onUp);
+listenEl.removeEventListener("pointercancel", onUp);
 };
 
 // IMPORTANT: listen on the captured element (tokenEl), not window
-captureEl.addEventListener("pointermove", onMove, { passive: false });
-captureEl.addEventListener("pointerup", onUp);
-captureEl.addEventListener("pointercancel", onUp);
+const listenEl = captureOk ? captureEl : window;
+
+listenEl.addEventListener("pointermove", onMove, { passive: false });
+listenEl.addEventListener("pointerup", onUp);
+listenEl.addEventListener("pointercancel", onUp);
   });
 }
 
