@@ -171,7 +171,7 @@ gridCanvas.style.display = "block";
 
   gridCtx.clearRect(0, 0, w, h);
   gridCtx.lineWidth = 1;
-  gridCtx.strokeStyle = "rgba(255,255,255,0.12)";
+  gridCtx.strokeStyle = "rgba(255,255,255,0.35)";
 
   // Draw verticals
   let xStart = offX % size;
