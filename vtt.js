@@ -249,8 +249,7 @@ function enableTokenInput(tokenEl) {
     const encId = tokenEl.dataset.encId;
 
     if (e.ctrlKey) {
-      if (selected.has(encId)) selected.delete(encId);
-      else selected.add(encId);
+      token.style.outline = "none";
     } else {
       if (!selected.has(encId) || selected.size > 1) {
         selected.clear();
