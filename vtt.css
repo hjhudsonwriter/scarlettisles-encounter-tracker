@@ -249,3 +249,12 @@ body.vtt .btn:not(.ghost):hover {
     0 10px 18px rgba(0,0,0,0.35);
   border-color: rgba(201,162,39,0.6);
 }
+/* Kill browser focus outlines on tokens */
+.token {
+  outline: none;
+}
+
+.token:focus,
+.token:focus-visible {
+  outline: none;
+}
