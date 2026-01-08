@@ -211,10 +211,7 @@ function renderTokens() {
     const { x, y } = normToPx(pos.x, pos.y);
     token.style.left = `${x}px`;
     token.style.top = `${y}px`;
-
-    token.style.outline = selected.has(c.encId)
-      ? "2px solid rgba(201,162,39,0.65)"
-      : "none";
+    token.classList.toggle("isSelected", selected.has(c.encId));
 
     enableTokenInput(token);
 
@@ -249,7 +246,6 @@ function enableTokenInput(tokenEl) {
     const encId = tokenEl.dataset.encId;
 
     if (e.ctrlKey) {
-      token.style.outline = "none";
     } else {
       if (!selected.has(encId) || selected.size > 1) {
         selected.clear();
