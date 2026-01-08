@@ -31,6 +31,12 @@ const btnNudgeR = el("btnNudgeR");
 const btnNudgeU = el("btnNudgeU");
 const btnNudgeD = el("btnNudgeD");
 const gridReadout = el("gridReadout");
+const btnFog = el("btnFog");
+const btnFogAll = el("btnFogAll");
+const btnFogCover = el("btnFogCover");
+const btnFogSm = el("btnFogSm");
+const btnFogLg = el("btnFogLg");
+const fogReadout = el("fogReadout");
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -79,6 +85,12 @@ function loadVttState() {
     opacity: 0.35    // overlay opacity
   }
 };
+  fog: {
+  enabled: false,     // fog on/off
+  revealAll: false,   // if true, no fog drawn
+  radiusSquares: 6,   // reveal radius in "grid squares"
+  opacity: 0.90       // darkness strength
+}
 
   const raw = localStorage.getItem(VTT_STATE_KEY);
   if (!raw) return fallback;
@@ -97,6 +109,11 @@ s.grid.size ??= 70;
 s.grid.offX ??= 0;
 s.grid.offY ??= 0;
 s.grid.opacity ??= 0.35;
+s.fog ||= {};
+s.fog.enabled ??= false;
+s.fog.revealAll ??= false;
+s.fog.radiusSquares ??= 6;
+s.fog.opacity ??= 0.90;
 
 return s;
   } catch {
@@ -205,6 +222,115 @@ function updateGridUI() {
 
   if (gridReadout) {
     gridReadout.textContent = `Grid: ${Math.round(g.size)}px • Offset: ${Math.round(g.offX)},${Math.round(g.offY)}`;
+  }
+}
+// ---------- Fog of War (canvas) ----------
+let fogCanvas = null;
+let fogCtx = null;
+
+function ensureFogCanvas() {
+  if (fogCanvas) return;
+
+  fogCanvas = document.createElement("canvas");
+  fogCanvas.id = "fogCanvas";
+  fogCanvas.style.position = "absolute";
+  fogCanvas.style.inset = "0";
+  fogCanvas.style.pointerEvents = "none";
+  fogCanvas.style.display = "none";
+
+  // IMPORTANT layering:
+  // Put fog above tokens so tokens are hidden unless revealed
+  // but keep marquee above fog (marquee is last)
+  mapWorld.insertBefore(fogCanvas, marquee);
+
+  fogCtx = fogCanvas.getContext("2d");
+}
+
+function resizeFogCanvas() {
+  if (!fogCanvas) return;
+
+  const w = mapStage.clientWidth || 1;
+  const h = mapStage.clientHeight || 1;
+
+  const dpr = window.devicePixelRatio || 1;
+  fogCanvas.width = Math.floor(w * dpr);
+  fogCanvas.height = Math.floor(h * dpr);
+  fogCanvas.style.width = `${w}px`;
+  fogCanvas.style.height = `${h}px`;
+
+  fogCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function fogRadiusPx() {
+  const g = vttState.grid;
+  const f = vttState.fog;
+
+  const squares = Math.max(1, Number(f?.radiusSquares) || 6);
+  const size = Math.max(10, Number(g?.size) || 70);
+
+  return squares * size;
+}
+
+function drawFog() {
+  ensureFogCanvas();
+  resizeFogCanvas();
+
+  const f = vttState.fog;
+  if (!f || !f.enabled || f.revealAll) {
+    fogCanvas.style.display = "none";
+    fogCtx.clearRect(0, 0, mapStage.clientWidth || 1, mapStage.clientHeight || 1);
+    return;
+  }
+
+  fogCanvas.style.display = "block";
+
+  const w = mapStage.clientWidth || 1;
+  const h = mapStage.clientHeight || 1;
+
+  fogCtx.clearRect(0, 0, w, h);
+
+  // Fill darkness
+  fogCtx.globalCompositeOperation = "source-over";
+  fogCtx.fillStyle = `rgba(0,0,0,${clamp(Number(f.opacity) || 0.9, 0.05, 0.98)})`;
+  fogCtx.fillRect(0, 0, w, h);
+
+  // Cut holes around PCs
+  const r = fogRadiusPx();
+
+  fogCtx.globalCompositeOperation = "destination-out";
+
+  // Find PC token centers from current DOM positions
+  roster
+    .filter(c => c.type === "pc")
+    .forEach(c => {
+      const elx = tokenEls.get(c.encId);
+      if (!elx) return;
+
+      const left = parseFloat(elx.style.left || "0");
+      const top = parseFloat(elx.style.top || "0");
+      const img = elx.querySelector("img");
+      const size = img ? (parseFloat(getComputedStyle(img).width) || 56) : 56;
+
+      const cx = left + size / 2;
+      const cy = top + size / 2;
+
+      fogCtx.beginPath();
+      fogCtx.arc(cx, cy, r, 0, Math.PI * 2);
+      fogCtx.fill();
+    });
+
+  fogCtx.globalCompositeOperation = "source-over";
+}
+
+function updateFogUI() {
+  const f = vttState.fog;
+  if (!f) return;
+
+  if (btnFog) btnFog.textContent = `Fog: ${f.enabled ? "On" : "Off"}`;
+
+  if (fogReadout) {
+    const r = Number(f.radiusSquares) || 6;
+    fogReadout.textContent = `Fog: ${r} sq • ${f.revealAll ? "Revealed" : "Covered"}`;
   }
 }
 
@@ -347,6 +473,7 @@ if (vttState.hideMonsters && c.type === "monster") token.classList.add("isHidden
     tokenLayer.appendChild(token);
     tokenEls.set(c.encId, token);
   });
+  drawFog();
 }
 
 function clearSelected() {
@@ -609,6 +736,44 @@ mapStage.addEventListener("pointerup", () => {
 });
 
 // ---------- Buttons (bind once) ----------
+btnFog?.addEventListener("click", () => {
+  vttState.fog.enabled = !vttState.fog.enabled;
+  if (!vttState.fog.enabled) vttState.fog.revealAll = true; // when off, treat as revealed
+  saveVttState();
+  updateFogUI();
+  drawFog();
+});
+
+btnFogAll?.addEventListener("click", () => {
+  vttState.fog.enabled = true;
+  vttState.fog.revealAll = true;
+  saveVttState();
+  updateFogUI();
+  drawFog();
+});
+
+btnFogCover?.addEventListener("click", () => {
+  vttState.fog.enabled = true;
+  vttState.fog.revealAll = false;
+  saveVttState();
+  updateFogUI();
+  drawFog();
+});
+
+btnFogLg?.addEventListener("click", () => {
+  vttState.fog.radiusSquares = clamp((vttState.fog.radiusSquares || 6) + 1, 1, 30);
+  saveVttState();
+  updateFogUI();
+  drawFog();
+});
+
+btnFogSm?.addEventListener("click", () => {
+  vttState.fog.radiusSquares = clamp((vttState.fog.radiusSquares || 6) - 1, 1, 30);
+  saveVttState();
+  updateFogUI();
+  drawFog();
+});
+
 btnZoomIn?.addEventListener("click", () => {
   vttState.camera.zoom = clamp((vttState.camera.zoom || 1) + 0.15, 0.5, 3);
   applyCamera();
@@ -752,4 +917,6 @@ applyCamera();
 applyTokenSize();
 updateGridUI();
 drawGrid();
+updateFogUI();
+drawFog();
 hydrateFromTracker();
