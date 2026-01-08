@@ -471,6 +471,7 @@ const g = vttState.grid;
 if (!fog || !fog.enabled || fog.revealAll) {
   // reveal all = no fog
   fogCtx.clearRect(0, 0, w, h);
+  return;
 }
 
 // draw full cover first
@@ -521,7 +522,6 @@ fogCtx.globalCompositeOperation = "source-over";
     });
 
   fogCtx.globalCompositeOperation = "source-over";
-}
 
 function updateFogUI() {
   const f = vttState.fog;
