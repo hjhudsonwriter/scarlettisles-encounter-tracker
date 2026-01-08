@@ -280,3 +280,8 @@ body.vtt .btn:not(.ghost):hover {
 #gridReadout {
   margin-left: 6px;
 }
+#fogCanvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
