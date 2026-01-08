@@ -127,7 +127,32 @@ body.vtt .btn.ghost:hover {
   color: rgba(231,231,234,0.9);
   white-space: nowrap;
 }
+/* ---------- Current turn highlight ---------- */
+.token.isActiveTurn img {
+  border-color: rgba(201,162,39,0.95);
+  animation: turnPulse 1.15s ease-out infinite;
+}
 
+@keyframes turnPulse {
+  0% {
+    box-shadow:
+      0 10px 18px rgba(0,0,0,0.35),
+      0 0 0 0 rgba(201,162,39,0.55),
+      0 0 18px rgba(201,162,39,0.25);
+  }
+  70% {
+    box-shadow:
+      0 10px 18px rgba(0,0,0,0.35),
+      0 0 0 10px rgba(201,162,39,0),
+      0 0 26px rgba(201,162,39,0.15);
+  }
+  100% {
+    box-shadow:
+      0 10px 18px rgba(0,0,0,0.35),
+      0 0 0 14px rgba(201,162,39,0),
+      0 0 18px rgba(201,162,39,0);
+  }
+}
 /* Hidden tokens (DM hide) */
 .token.isHidden {
   opacity: 0;
