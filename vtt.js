@@ -88,12 +88,11 @@ function loadVttState() {
 
     // Fog of War
     fog: {
-  enabled: false,
-  revealAll: true,
-  radiusSquares: 6,
-  opacity: 0.90,
-  revealed: {} // stores revealed grid cells permanently
-}
+      enabled: false,
+      revealAll: true,      // when fog is "off", we treat it as revealed
+      radiusSquares: 6,
+      opacity: 0.90
+    }
   };
 
   const raw = localStorage.getItem(VTT_STATE_KEY);
@@ -122,7 +121,6 @@ function loadVttState() {
     s.fog.revealAll ??= fallback.fog.revealAll;
     s.fog.radiusSquares ??= fallback.fog.radiusSquares;
     s.fog.opacity ??= fallback.fog.opacity;
-    s.fog.revealed ||= {};
 
     return s;
   } catch {
@@ -241,11 +239,6 @@ function ensureFogCanvas() {
   if (fogCanvas) return;
 
   fogCanvas = document.createElement("canvas");
-  fogCanvas.style.pointerEvents = "none"; // IMPORTANT: let clicks/drags pass through to tokens
-fogCanvas.style.position = "absolute";
-fogCanvas.style.left = "0";
-fogCanvas.style.top = "0";
-fogCanvas.style.zIndex = "5"; // above map/grid, below tokens
   fogCanvas.id = "fogCanvas";
   fogCanvas.style.position = "absolute";
   fogCanvas.style.inset = "0";
@@ -284,172 +277,17 @@ function fogRadiusPx() {
 
   return squares * size;
 }
-function cellKey(cx, cy) {
-  return `${cx},${cy}`;
-}
-
-function worldToCell(wx, wy) {
-  const g = vttState.grid;
-  const size = Math.max(10, Number(g.size) || 70);
-  const offX = Number(g.offX) || 0;
-  const offY = Number(g.offY) || 0;
-
-  const cx = Math.floor((wx - offX) / size);
-  const cy = Math.floor((wy - offY) / size);
-  return { cx, cy };
-}
-
-function revealCellsAroundWorldPoint(wx, wy) {
-  const fog = vttState.fog;
-  if (!fog || fog.revealAll) return;
-
-  fog.revealed ||= {};
-
-  const { cx, cy } = worldToCell(wx, wy);
-  const r = Math.max(1, Number(fog.radiusSquares) || 6);
-
-  for (let dy = -r; dy <= r; dy++) {
-    for (let dx = -r; dx <= r; dx++) {
-      // circle-ish reveal (not a square)
-      if ((dx * dx + dy * dy) > (r * r)) continue;
-      fog.revealed[cellKey(cx + dx, cy + dy)] = 1;
-    }
-  }
-}
-
-function updatePersistentFogFromPCs() {
-  // Reveal from PCs only (so monsters don't reveal the map)
-  roster.forEach((c) => {
-    if (c.type !== "pc") return;
-    const pos = vttState.tokenPos[c.encId];
-    if (!pos) return;
-
-    const { x, y } = normToPx(pos.x, pos.y);
-    const tokenSize = Number(vttState.tokenSize) || 56;
-
-    // Use token center in WORLD coords
-    const cx = x + tokenSize / 2;
-    const cy = y + tokenSize / 2;
-
-    revealCellsAroundWorldPoint(cx, cy);
-  });
-
-  saveVttState();
-}
-
-// This stores what has been revealed, and it PERSISTS.
-let fogMask = null;      // OffscreenCanvas or <canvas>
-let fogMaskCtx = null;
-
-function ensureFogCanvas() {
-  if (fogCanvas) return;
-
-  fogCanvas = document.createElement("canvas");
-  fogCanvas.id = "fogCanvas";
-
-  // IMPORTANT: do NOT block token dragging
-  fogCanvas.style.pointerEvents = "none";
-  fogCanvas.style.position = "absolute";
-  fogCanvas.style.left = "0";
-  fogCanvas.style.top = "0";
-  fogCanvas.style.zIndex = "5";
-
-  // Put it above the map (and grid), but below tokens
-  mapWorld.insertBefore(fogCanvas, tokenLayer);
-
-  fogCtx = fogCanvas.getContext("2d");
-}
-
-function ensureFogMask(w, h) {
-  // Create/reset mask if missing or wrong size
-  if (!fogMask || fogMask.width !== w || fogMask.height !== h) {
-    // OffscreenCanvas if available, else normal canvas
-    fogMask = (typeof OffscreenCanvas !== "undefined")
-      ? new OffscreenCanvas(w, h)
-      : document.createElement("canvas");
-
-    fogMask.width = w;
-    fogMask.height = h;
-    fogMaskCtx = fogMask.getContext("2d");
-
-    // Start as fully covered (nothing revealed)
-    fogMaskCtx.clearRect(0, 0, w, h);
-  }
-}
-
-function resizeFogCanvas() {
-  if (!fogCanvas) return;
-
-  const wCss = mapStage.clientWidth || 1;
-  const hCss = mapStage.clientHeight || 1;
-
-  const dpr = window.devicePixelRatio || 1;
-  const w = Math.floor(wCss * dpr);
-  const h = Math.floor(hCss * dpr);
-
-  fogCanvas.width = w;
-  fogCanvas.height = h;
-  fogCanvas.style.width = `${wCss}px`;
-  fogCanvas.style.height = `${hCss}px`;
-
-  fogCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  // Mask works in CSS pixels to match our drawing coords (because we setTransform to dpr)
-  ensureFogMask(wCss, hCss);
-}
-
-function fogRadiusPx() {
-  const squares = Number(vttState.fog?.radiusSquares ?? 6);
-  const gridSize = Number(vttState.grid?.size ?? 70);
-  return Math.max(10, squares * gridSize);
-}
-
-function fogClearRevealed() {
-  // Clears ALL explored areas (back to fully covered)
-  const w = mapStage.clientWidth || 1;
-  const h = mapStage.clientHeight || 1;
-  ensureFogMask(w, h);
-  fogMaskCtx.clearRect(0, 0, w, h);
-}
-
-function fogRevealCircle(cx, cy, r) {
-  const w = mapStage.clientWidth || 1;
-  const h = mapStage.clientHeight || 1;
-  ensureFogMask(w, h);
-
-  fogMaskCtx.save();
-  fogMaskCtx.fillStyle = "rgba(255,255,255,1)";
-  fogMaskCtx.beginPath();
-  fogMaskCtx.arc(cx, cy, r, 0, Math.PI * 2);
-  fogMaskCtx.fill();
-  fogMaskCtx.restore();
-}
 
 function drawFog() {
   ensureFogCanvas();
   resizeFogCanvas();
 
   const f = vttState.fog;
-  const w = mapStage.clientWidth || 1;
-  const h = mapStage.clientHeight || 1;
-
-  // If fog disabled OR revealAll -> clear overlay completely
   if (!f || !f.enabled || f.revealAll) {
-    fogCtx.clearRect(0, 0, w, h);
+    fogCanvas.style.display = "none";
+    fogCtx.clearRect(0, 0, mapStage.clientWidth || 1, mapStage.clientHeight || 1);
     return;
   }
-
-  // 1) Paint full fog cover
-  fogCtx.clearRect(0, 0, w, h);
-  fogCtx.fillStyle = "rgba(0,0,0,0.72)";
-  fogCtx.fillRect(0, 0, w, h);
-
-  // 2) Punch out explored areas using the mask
-  fogCtx.save();
-  fogCtx.globalCompositeOperation = "destination-out";
-  // mask is white where revealed
-  fogCtx.drawImage(fogMask, 0, 0);
-  fogCtx.restore();
 
   fogCanvas.style.display = "block";
 
@@ -464,40 +302,9 @@ function drawFog() {
   fogCtx.fillRect(0, 0, w, h);
 
   // Cut holes around PCs
-  const fog = vttState.fog;
-const g = vttState.grid;
+  const r = fogRadiusPx();
 
-if (!fog || !fog.enabled || fog.revealAll) {
-  fogCtx.clearRect(0, 0, w, h);
-  return;
-}
-
-// draw full cover first
-fogCtx.clearRect(0, 0, w, h);
-fogCtx.globalCompositeOperation = "source-over";
-fogCtx.fillStyle = `rgba(0,0,0,${fog.opacity ?? 0.9})`;
-fogCtx.fillRect(0, 0, w, h);
-
-// punch holes for revealed cells
-fogCtx.globalCompositeOperation = "destination-out";
-
-const size = Math.max(10, Number(g.size) || 70);
-const offX = Number(g.offX) || 0;
-const offY = Number(g.offY) || 0;
-
-fog.revealed ||= {};
-
-Object.keys(fog.revealed).forEach((k) => {
-  const [cx, cy] = k.split(",").map(Number);
-  const x = offX + cx * size;
-  const y = offY + cy * size;
-
-  // Reveal this grid square
-  fogCtx.fillRect(x, y, size, size);
-});
-
-// back to normal drawing mode
-fogCtx.globalCompositeOperation = "source-over";
+  fogCtx.globalCompositeOperation = "destination-out";
 
   // Find PC token centers from current DOM positions
   roster
@@ -520,6 +327,7 @@ fogCtx.globalCompositeOperation = "source-over";
     });
 
   fogCtx.globalCompositeOperation = "source-over";
+}
 
 function updateFogUI() {
   const f = vttState.fog;
@@ -775,24 +583,9 @@ const clampedPos = clampTokenToStage(nextX, nextY, tokenSize);
 
     const n = pxToNorm(clampedPos.x, clampedPos.y);
     vttState.tokenPos[t.id] = { x: n.x, y: n.y };
-    // If fog is enabled, permanently reveal where PCs move
-if (vttState.fog?.enabled && !vttState.fog?.revealAll) {
-  const c = roster.find(x => x.encId === t.id);
-  if (c && c.type === "pc") {
-    const r = fogRadiusPx();
-    const cx = clampedPos.x + tokenSize / 2;
-    const cy = clampedPos.y + tokenSize / 2;
-    fogRevealCircle(cx, cy, r);
-  }
-}
-    drawFog();
   });
 
   saveVttState();
-  if (vttState.fog?.enabled && !vttState.fog?.revealAll) {
-  updatePersistentFogFromPCs();
-  if (typeof drawFog === "function") drawFog();
-}
 };
 
 const onUp = () => {
@@ -952,10 +745,7 @@ mapStage.addEventListener("pointerup", () => {
 // ---------- Buttons (bind once) ----------
 btnFog?.addEventListener("click", () => {
   vttState.fog.enabled = !vttState.fog.enabled;
-  if (!vttState.fog.enabled) {
-    vttState.fog.revealAll = true;   // when off, treat as revealed
-    vttState.fog.revealed = {};      // optional: wipe memory when turning fog off
-  }
+  if (!vttState.fog.enabled) vttState.fog.revealAll = true; // when off, treat as revealed
   saveVttState();
   updateFogUI();
   drawFog();
@@ -972,10 +762,6 @@ btnFogAll?.addEventListener("click", () => {
 btnFogCover?.addEventListener("click", () => {
   vttState.fog.enabled = true;
   vttState.fog.revealAll = false;
-
-  // IMPORTANT: reset exploration when you "Cover All"
-  fogClearRevealed();
-
   saveVttState();
   updateFogUI();
   drawFog();
