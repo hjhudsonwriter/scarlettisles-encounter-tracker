@@ -242,3 +242,10 @@ body.vtt .btn:not(.ghost):hover {
 #mapStage:fullscreen ~ * {
   /* harmless, but keeps the rule valid */
 }
+/* Selected token styling (no ugly yellow box) */
+.token.isSelected img {
+  box-shadow:
+    0 0 0 2px rgba(201,162,39,0.8),
+    0 10px 18px rgba(0,0,0,0.35);
+  border-color: rgba(201,162,39,0.6);
+}
