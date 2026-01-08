@@ -62,6 +62,7 @@ function loadVttState() {
     tokenPos: {},        // encId -> {x,y} normalized
     tokenSize: 56,
     hideMonsters: false
+    hidden: {} // encId -> true
   };
 
   if (!raw) return fallback;
@@ -72,6 +73,7 @@ function loadVttState() {
     s.tokenPos ||= {};
     s.tokenSize ??= 56;
     s.hideMonsters ??= false;
+    s.hidden ||= {};
     return s;
   } catch {
     return fallback;
@@ -191,6 +193,11 @@ function renderTokens() {
     const token = document.createElement("div");
     token.className = "token";
     token.dataset.encId = c.encId;
+    // DM hidden: individual tokens
+if (vttState.hidden?.[c.encId]) token.classList.add("isHidden");
+
+// Optional: blanket hide monsters switch too
+if (vttState.hideMonsters && c.type === "monster") token.classList.add("isHidden");
 
     const img = document.createElement("img");
     img.src = c.avatar || defaultAvatar(c.type);
