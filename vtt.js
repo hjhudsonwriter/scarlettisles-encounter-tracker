@@ -423,9 +423,13 @@ btnClearMap?.addEventListener("click", () => {
 });
 
 // ---------- Tokens ----------
+// ---------- Tokens ----------
 let roster = [];
 let selected = new Set(); // encIds
 let tokenEls = new Map(); // encId -> element
+
+// Which token should be highlighted as "current turn"
+let activeTurnEncId = null;
 
 function ensureDefaultPositions() {
   const existing = vttState.tokenPos;
@@ -448,6 +452,11 @@ function renderTokens() {
     const token = document.createElement("div");
     token.className = "token";
     token.dataset.encId = c.encId;
+
+    // Highlight the token whose turn it is
+if (activeTurnEncId && c.encId === activeTurnEncId) {
+  token.classList.add("isActiveTurn");
+}
     // DM hidden: individual tokens
 if (vttState.hidden?.[c.encId]) token.classList.add("isHidden");
 
@@ -909,6 +918,14 @@ function hydrateFromTracker() {
   const enc = state?.encounter;
 
   roster = enc?.roster || [];
+
+// Work out whose turn it is (only when encounter is running)
+if (enc && enc.status === "running" && Array.isArray(enc.roster) && enc.roster.length) {
+  const idx = Math.max(0, Math.min(enc.turnIndex || 0, enc.roster.length - 1));
+  activeTurnEncId = enc.roster[idx]?.encId || null;
+} else {
+  activeTurnEncId = null;
+}
   const name = enc?.name || "(unnamed encounter)";
   if (vttStatus) vttStatus.textContent = `Showing tokens for: ${name}`;
 
