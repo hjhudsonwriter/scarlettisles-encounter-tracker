@@ -450,7 +450,6 @@ function drawFog() {
   // mask is white where revealed
   fogCtx.drawImage(fogMask, 0, 0);
   fogCtx.restore();
-}
 
   fogCanvas.style.display = "block";
 
@@ -469,7 +468,6 @@ function drawFog() {
 const g = vttState.grid;
 
 if (!fog || !fog.enabled || fog.revealAll) {
-  // reveal all = no fog
   fogCtx.clearRect(0, 0, w, h);
   return;
 }
