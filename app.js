@@ -179,6 +179,30 @@ const inspectorStats = el("inspectorStats");
 const inspectorHp = el("inspectorHp");
 const inspectorConds = el("inspectorConds");
 const momentumText = el("momentumText");
+// ---------- VTT DM controls (tracker side) ----------
+const VTT_STATE_KEY = "encounterTracker.vtt.state";
+
+function loadVttState() {
+  try {
+    return JSON.parse(localStorage.getItem(VTT_STATE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveVttState(patch) {
+  const s = loadVttState();
+  const next = { ...s, ...patch };
+  localStorage.setItem(VTT_STATE_KEY, JSON.stringify(next));
+}
+
+document.getElementById("btnMonstersHide")?.addEventListener("click", () => {
+  saveVttState({ hideMonsters: true });
+});
+
+document.getElementById("btnMonstersReveal")?.addEventListener("click", () => {
+  saveVttState({ hideMonsters: false });
+});
 
 /* ---------- Core helpers ---------- */
 function getCurrentCombatant() {
