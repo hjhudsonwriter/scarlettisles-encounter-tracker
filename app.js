@@ -804,6 +804,7 @@ btnAddSelected?.addEventListener("click", () => {
     curHp: base.maxHp,
     init: null,
     avatar: base.avatar || "",
+    refLink: c.refLink || "",
     conditions: [],
     defeated: false
   });
