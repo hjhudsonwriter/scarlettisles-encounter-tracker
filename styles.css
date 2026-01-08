@@ -364,7 +364,7 @@ input:focus, select:focus{
 .boardTableHead,
 #encList .item{
   display:grid;
-  grid-template-columns: 56px 84px minmax(220px, 1fr) 120px minmax(220px, 1fr) 110px;
+  grid-template-columns: 56px 84px minmax(220px, 1fr) 120px minmax(180px, 0.9fr) 110px;
   gap: 10px;
   align-items:center;
   width: 100%;
@@ -384,7 +384,7 @@ input:focus, select:focus{
 
 /* List area padding */
 .boardList{
-  padding: 10px 14px 14px 14px;
+  padding: 10px 26px 14px 14px; /* extra right padding prevents edge clipping */
 }
 
 /* Encounter row styling */
