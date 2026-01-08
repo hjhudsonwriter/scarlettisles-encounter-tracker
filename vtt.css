@@ -81,9 +81,18 @@ body.vtt .btn.ghost:hover {
   pointer-events: none;
 }
 
+#gridCanvas {
+  position: absolute;
+  inset: 0;
+  z-index: 5;          /* ABOVE mapImage */
+  pointer-events: none;
+  display: none;       /* JS will toggle this on/off */
+}
+
 #tokenLayer {
   position: absolute;
   inset: 0;
+  z-index: 10;         /* ABOVE grid */
 }
 
 /* ---------- Tokens ---------- */
