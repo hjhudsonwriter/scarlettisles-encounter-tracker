@@ -166,21 +166,6 @@ const btnResetAll = el("btnResetAll");
 const btnInstall = el("btnInstall");
 const btnOpenVtt = el("btnOpenVtt");
 // ---------- VTT DM Control Panel helpers ----------
-const VTT_STATE_KEY = "encounterTracker.vtt.state";
-
-function loadVttState() {
-  try {
-    return JSON.parse(localStorage.getItem(VTT_STATE_KEY) || "{}");
-  } catch {
-    return {};
-  }
-}
-
-function saveVttState(patch) {
-  const s = loadVttState();
-  const next = { ...s, ...patch };
-  localStorage.setItem(VTT_STATE_KEY, JSON.stringify(next));
-}
 
 // DM buttons (tracker-only)
 const btnMonstersHide = document.getElementById("btnMonstersHide");
@@ -207,21 +192,6 @@ const inspectorHp = el("inspectorHp");
 const inspectorConds = el("inspectorConds");
 const momentumText = el("momentumText");
 // ---------- VTT DM controls (tracker side) ----------
-const VTT_STATE_KEY = "encounterTracker.vtt.state";
-
-function loadVttState() {
-  try {
-    return JSON.parse(localStorage.getItem(VTT_STATE_KEY) || "{}");
-  } catch {
-    return {};
-  }
-}
-
-function saveVttState(patch) {
-  const s = loadVttState();
-  const next = { ...s, ...patch };
-  localStorage.setItem(VTT_STATE_KEY, JSON.stringify(next));
-}
 
 document.getElementById("btnMonstersHide")?.addEventListener("click", () => {
   saveVttState({ hideMonsters: true });
@@ -239,6 +209,7 @@ function getCurrentCombatant() {
   return enc.roster[enc.turnIndex] || null;
 }
 
+const VTT_STATE_KEY = "encounterTracker.vtt.state";
 function loadVttState() {
   try {
     return JSON.parse(localStorage.getItem(VTT_STATE_KEY) || "{}");
