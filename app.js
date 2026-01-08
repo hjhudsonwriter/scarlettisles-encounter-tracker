@@ -191,15 +191,6 @@ const inspectorStats = el("inspectorStats");
 const inspectorHp = el("inspectorHp");
 const inspectorConds = el("inspectorConds");
 const momentumText = el("momentumText");
-// ---------- VTT DM controls (tracker side) ----------
-
-document.getElementById("btnMonstersHide")?.addEventListener("click", () => {
-  saveVttState({ hideMonsters: true });
-});
-
-document.getElementById("btnMonstersReveal")?.addEventListener("click", () => {
-  saveVttState({ hideMonsters: false });
-});
 
 /* ---------- Core helpers ---------- */
 function getCurrentCombatant() {
