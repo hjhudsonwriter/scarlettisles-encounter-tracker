@@ -371,6 +371,8 @@ function render() {
     inspectorAvatar.onerror = () => (inspectorAvatar.src = defaultAvatar(current.type));
     inspectorStats.hidden = false;
     inspectorHp.textContent = `HP: ${current.curHp}/${current.maxHp}`;
+
+    console.log("STATBLOCK DEBUG:", current.name, current.type, current.refLink);
      
      // Stat block link button (monsters only)
 if (btnOpenStatBlock) {
