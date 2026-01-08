@@ -385,14 +385,35 @@ input:focus, select:focus{
 
 /* ===== Centre board: header + rows must share the same grid ===== */
 
+/* ONE grid definition for the encounter table */
 .boardTableHead,
-#encList .item {
+.boardList .item{
   display: grid;
-  grid-template-columns: 56px 60px 1.4fr 90px 1.2fr 110px;
+  grid-template-columns: 56px 64px minmax(220px, 1.6fr) 110px minmax(200px, 1.2fr) 110px;
   gap: 12px;
   align-items: center;
   width: 100%;
   box-sizing: border-box;
+}
+
+/* Name cell should be allowed to shrink without killing the text */
+.boardName{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+
+.boardName .nameText{
+  flex: 1 1 auto;
+  min-width:0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.boardName .badge{
+  flex: 0 0 auto; /* prevents badges squeezing the name to death */
 }
 
 /* Prevent the right side getting visually "cut" */
