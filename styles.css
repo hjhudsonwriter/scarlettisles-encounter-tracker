@@ -360,11 +360,19 @@ input:focus, select:focus{
 
 /* ===== Board (center) ===== */
 
-/* Header row: Avatar | Init | Name | HP | Conditions | Actions */
-.boardTableHead{
+/* Header row + encounter rows share ONE grid */
+.boardTableHead,
+#encList .item{
   display:grid;
-  grid-template-columns: 56px 84px minmax(240px, 1fr) 120px minmax(220px, 1fr) 110px;
+  grid-template-columns: 56px 84px minmax(220px, 1fr) 120px minmax(220px, 1fr) 110px;
   gap: 10px;
+  align-items:center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Header row styling */
+.boardTableHead{
   padding: 10px 14px;
   font-family: var(--font);
   font-weight: 800;
@@ -374,36 +382,34 @@ input:focus, select:focus{
   border-bottom: 1px solid var(--line);
 }
 
+/* List area padding */
 .boardList{
   padding: 10px 14px 14px 14px;
 }
 
-/* Give the centre panel list a bit more breathing room on the right */
-.boardList { 
-  padding-right: 24px; 
+/* Encounter row styling */
+#encList .item{
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.72);
 }
 
-/* ===== Centre board: header + rows must share the same grid ===== */
-
-/* ONE grid definition for the encounter table */
-.boardTableHead,
-.boardList .item{
-  display: grid;
-  grid-template-columns: 56px 64px minmax(220px, 1.6fr) 110px minmax(200px, 1.2fr) 110px;
-  gap: 12px;
-  align-items: center;
-  width: 100%;
-  box-sizing: border-box;
+/* Avatar */
+#encList .avatar{
+  width:44px;
+  height:44px;
+  border-radius: 14px;
+  object-fit: cover;
 }
 
-/* Name cell should be allowed to shrink without killing the text */
+/* Name cell: keep text readable */
 .boardName{
   display:flex;
   align-items:center;
   gap:8px;
   min-width:0;
 }
-
 .boardName .nameText{
   flex: 1 1 auto;
   min-width:0;
@@ -411,81 +417,11 @@ input:focus, select:focus{
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .boardName .badge{
-  flex: 0 0 auto; /* prevents badges squeezing the name to death */
+  flex: 0 0 auto;
 }
 
-/* Prevent the right side getting visually "cut" */
-.boardPanel,
-.centerPanel,
-.boardWrap {
-  overflow: hidden;
-}
-
-/* Let the conditions cell use its full width properly */
-.boardConds {
-  min-width: 0;
-  padding-right: 10px; /* keeps badges away from the panel edge */
-}
-
-/* Make long condition badges ellipsis instead of “half-hidden letters” */
-.boardConds .badge {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Encounter row: Avatar | Init | Name | HP | Conditions | Actions */
-.boardList .item{
-  display:grid;
-  grid-template-columns: 56px 84px minmax(240px, 1fr) 120px minmax(220px, 1fr) 110px;
-  gap: 10px;
-  align-items:center;
-  padding: 10px;
-  border-radius: 16px;
-  border: 1px solid var(--line);
-  background: rgba(255,255,255,.72);
-}
-
-/* Avatar in rows */
-.boardList .avatar{
-  width:44px;
-  height:44px;
-  border-radius: 14px;
-  object-fit: cover;
-  border:1px solid var(--line);
-  background: rgba(255,255,255,.75);
-}
-
-/* Make itemMain NOT interfere with grid layout */
-.boardList .itemMain{
-  display: contents; /* OK here because the children become the grid cells */
-}
-
-/* Init + HP cells */
-.boardCell{
-  font-family: var(--font);
-  font-weight: 800;
-}
-
-/* Name cell */
-.boardName{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  min-width:0;
-}
-
-.boardName .nameText{
-  min-width:0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Conditions cell */
+/* Conditions */
 .boardConds{
   display:flex;
   flex-wrap:wrap;
@@ -496,14 +432,13 @@ input:focus, select:focus{
   overflow: hidden;
 }
 
-/* Actions cell */
+/* Actions */
 .boardActionsCell{
   display:flex;
   justify-content:flex-end;
   gap:8px;
   white-space:nowrap;
 }
-
 .boardActionsCell .btn{
   padding: 8px 10px;
   border-radius: 12px;
@@ -540,11 +475,4 @@ body::before {
   filter: blur(0px);    /* optional: blur(1px) */
   pointer-events: none;
   z-index: -1;
-}
-
-.boardList .item{
-  display:grid;
-  grid-template-columns: 56px 84px 1fr 120px 1.2fr 110px;
-  gap:10px;
-  align-items:center;
 }
