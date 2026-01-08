@@ -165,6 +165,34 @@ const btnImportPdf = el("btnImportPdf");
 const btnResetAll = el("btnResetAll");
 const btnInstall = el("btnInstall");
 const btnOpenVtt = el("btnOpenVtt");
+// ---------- VTT DM Control Panel helpers ----------
+const VTT_STATE_KEY = "encounterTracker.vtt.state";
+
+function loadVttState() {
+  try {
+    return JSON.parse(localStorage.getItem(VTT_STATE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveVttState(patch) {
+  const s = loadVttState();
+  const next = { ...s, ...patch };
+  localStorage.setItem(VTT_STATE_KEY, JSON.stringify(next));
+}
+
+// DM buttons (tracker-only)
+const btnMonstersHide = document.getElementById("btnMonstersHide");
+const btnMonstersReveal = document.getElementById("btnMonstersReveal");
+
+btnMonstersHide?.addEventListener("click", () => {
+  saveVttState({ hideMonsters: true });
+});
+
+btnMonstersReveal?.addEventListener("click", () => {
+  saveVttState({ hideMonsters: false, hidden: {} });
+});
 
 const damageInput = el("damageInput");
 const conditionInput = el("conditionInput");
