@@ -71,51 +71,58 @@ function saveMap(dataUrl) {
 
 function loadVttState() {
   const fallback = {
-  camera: { x: 0, y: 0, zoom: 1 },
-  tokenPos: {},
-  tokenSize: 56,
-  hideMonsters: false,
+    camera: { x: 0, y: 0, zoom: 1 },
+    tokenPos: {},
+    tokenSize: 56,
+    hideMonsters: false,
 
-  grid: {
-    show: false,     // draw overlay?
-    snap: false,     // snap tokens?
-    size: 70,        // px per square (adjust per map)
-    offX: 0,         // grid alignment offset X
-    offY: 0,         // grid alignment offset Y
-    opacity: 0.35    // overlay opacity
-  }
-};
-  fog: {
-  enabled: false,     // fog on/off
-  revealAll: false,   // if true, no fog drawn
-  radiusSquares: 6,   // reveal radius in "grid squares"
-  opacity: 0.90       // darkness strength
-}
+    // Grid overlay + snap
+    grid: {
+      show: false,
+      snap: false,
+      size: 70,
+      offX: 0,
+      offY: 0,
+      opacity: 0.35
+    },
+
+    // Fog of War
+    fog: {
+      enabled: false,
+      revealAll: true,      // when fog is "off", we treat it as revealed
+      radiusSquares: 6,
+      opacity: 0.90
+    }
+  };
 
   const raw = localStorage.getItem(VTT_STATE_KEY);
   if (!raw) return fallback;
 
   try {
     const s = JSON.parse(raw) || {};
+
     s.camera ||= fallback.camera;
     s.tokenPos ||= {};
-    s.tokenSize ??= 56;
-s.hideMonsters ??= false;
+    s.tokenSize ??= fallback.tokenSize;
+    s.hideMonsters ??= fallback.hideMonsters;
 
-s.grid ||= {};
-s.grid.show ??= false;
-s.grid.snap ??= false;
-s.grid.size ??= 70;
-s.grid.offX ??= 0;
-s.grid.offY ??= 0;
-s.grid.opacity ??= 0.35;
-s.fog ||= {};
-s.fog.enabled ??= false;
-s.fog.revealAll ??= false;
-s.fog.radiusSquares ??= 6;
-s.fog.opacity ??= 0.90;
+    // Grid defaults
+    s.grid ||= {};
+    s.grid.show ??= fallback.grid.show;
+    s.grid.snap ??= fallback.grid.snap;
+    s.grid.size ??= fallback.grid.size;
+    s.grid.offX ??= fallback.grid.offX;
+    s.grid.offY ??= fallback.grid.offY;
+    s.grid.opacity ??= fallback.grid.opacity;
 
-return s;
+    // Fog defaults
+    s.fog ||= {};
+    s.fog.enabled ??= fallback.fog.enabled;
+    s.fog.revealAll ??= fallback.fog.revealAll;
+    s.fog.radiusSquares ??= fallback.fog.radiusSquares;
+    s.fog.opacity ??= fallback.fog.opacity;
+
+    return s;
   } catch {
     return fallback;
   }
