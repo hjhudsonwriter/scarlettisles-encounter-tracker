@@ -8,6 +8,7 @@
 */
 
 const STORAGE_KEY = "encounterTracker.v1";
+const VTT_STATE_KEY = "encounterTracker.vtt.state";
 
 /* ---------- Utilities ---------- */
 const el = (id) => document.getElementById(id);
@@ -130,6 +131,17 @@ function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
 }
 
+// DM buttons
+document.getElementById("btnMonstersHide")?.addEventListener("click", () => {
+  saveVttState({ hideMonsters: true });
+});
+
+document.getElementById("btnMonstersReveal")?.addEventListener("click", () => {
+  saveVttState({ hideMonsters: false, hidden: {} });
+});
+}
+
+
 /* ---------- DOM refs ---------- */
 const libraryList = el("libraryList");
 const savedEncountersList = el("savedEncountersList");
@@ -175,6 +187,20 @@ function getCurrentCombatant() {
   if (enc.status !== "running") return null;
   if (!enc.roster.length) return null;
   return enc.roster[enc.turnIndex] || null;
+}
+
+function loadVttState() {
+  try {
+    return JSON.parse(localStorage.getItem(VTT_STATE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveVttState(patch) {
+  const s = loadVttState();
+  const next = { ...s, ...patch };
+  localStorage.setItem(VTT_STATE_KEY, JSON.stringify(next));
 }
 
 function findNextLivingIndex(enc, startIndex) {
