@@ -167,6 +167,16 @@ body{
   display:flex;
   gap:8px;
   padding: 10px 14px 0 14px;
+  flex-wrap: wrap;              /* allow wrapping instead of clipping */
+}
+.tab{
+  flex: 1 1 110px;              /* can shrink + wrap nicely */
+  min-width: 0;
+  padding: 9px 10px;            /* slightly tighter */
+  font-size: 13px;              /* helps “Import/Export” fit */
+  white-space: nowrap;          /* keep label on one line */
+  overflow: hidden;
+  text-overflow: ellipsis;      /* if it *still* can’t fit, it’ll ellipsis */
 }
 .tab{
   flex:1;
