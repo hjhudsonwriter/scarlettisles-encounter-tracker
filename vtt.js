@@ -22,6 +22,15 @@ const btnTokLg = el("btnTokLg");
 
 const btnFullscreen = el("btnFullscreen");
 const btnToggleMonsters = el("btnToggleMonsters");
+const btnGrid = el("btnGrid");
+const btnSnap = el("btnSnap");
+const btnGridSm = el("btnGridSm");
+const btnGridLg = el("btnGridLg");
+const btnNudgeL = el("btnNudgeL");
+const btnNudgeR = el("btnNudgeR");
+const btnNudgeU = el("btnNudgeU");
+const btnNudgeD = el("btnNudgeD");
+const gridReadout = el("gridReadout");
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -56,11 +65,20 @@ function saveMap(dataUrl) {
 
 function loadVttState() {
   const fallback = {
-    camera: { x: 0, y: 0, zoom: 1 },
-    tokenPos: {},
-    tokenSize: 56,
-    hideMonsters: false
-  };
+  camera: { x: 0, y: 0, zoom: 1 },
+  tokenPos: {},
+  tokenSize: 56,
+  hideMonsters: false,
+
+  grid: {
+    show: false,     // draw overlay?
+    snap: false,     // snap tokens?
+    size: 70,        // px per square (adjust per map)
+    offX: 0,         // grid alignment offset X
+    offY: 0,         // grid alignment offset Y
+    opacity: 0.35    // overlay opacity
+  }
+};
 
   const raw = localStorage.getItem(VTT_STATE_KEY);
   if (!raw) return fallback;
@@ -70,8 +88,17 @@ function loadVttState() {
     s.camera ||= fallback.camera;
     s.tokenPos ||= {};
     s.tokenSize ??= 56;
-    s.hideMonsters ??= false;
-    return s;
+s.hideMonsters ??= false;
+
+s.grid ||= {};
+s.grid.show ??= false;
+s.grid.snap ??= false;
+s.grid.size ??= 70;
+s.grid.offX ??= 0;
+s.grid.offY ??= 0;
+s.grid.opacity ??= 0.35;
+
+return s;
   } catch {
     return fallback;
   }
@@ -81,6 +108,98 @@ let vttState = loadVttState();
 
 function saveVttState() {
   localStorage.setItem(VTT_STATE_KEY, JSON.stringify(vttState));
+}
+// ---------- Grid overlay (canvas) ----------
+let gridCanvas = null;
+let gridCtx = null;
+
+function ensureGridCanvas() {
+  if (gridCanvas) return;
+
+  gridCanvas = document.createElement("canvas");
+  gridCanvas.id = "gridCanvas";
+  gridCanvas.style.opacity = String(vttState.grid?.opacity ?? 0.35);
+
+  // Put it above the map image but below tokens
+  // mapWorld contains: img, tokenLayer, marquee
+  // Insert before tokenLayer so tokens sit above it
+  mapWorld.insertBefore(gridCanvas, tokenLayer);
+
+  gridCtx = gridCanvas.getContext("2d");
+}
+
+function resizeGridCanvas() {
+  if (!gridCanvas) return;
+  const w = mapStage.clientWidth || 1;
+  const h = mapStage.clientHeight || 1;
+
+  // High DPI crispness
+  const dpr = window.devicePixelRatio || 1;
+  gridCanvas.width = Math.floor(w * dpr);
+  gridCanvas.height = Math.floor(h * dpr);
+  gridCanvas.style.width = `${w}px`;
+  gridCanvas.style.height = `${h}px`;
+
+  gridCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function drawGrid() {
+  ensureGridCanvas();
+  resizeGridCanvas();
+
+  const g = vttState.grid;
+  if (!g || !g.show) {
+    gridCtx.clearRect(0, 0, mapStage.clientWidth || 1, mapStage.clientHeight || 1);
+    return;
+  }
+
+  gridCanvas.style.opacity = String(g.opacity ?? 0.35);
+
+  const w = mapStage.clientWidth || 1;
+  const h = mapStage.clientHeight || 1;
+  const size = Math.max(10, Number(g.size) || 70);
+
+  // Offsets in WORLD space (not affected by camera translate), so alignment sticks
+  const offX = Number(g.offX) || 0;
+  const offY = Number(g.offY) || 0;
+
+  gridCtx.clearRect(0, 0, w, h);
+  gridCtx.lineWidth = 1;
+  gridCtx.strokeStyle = "rgba(255,255,255,0.12)";
+
+  // Draw verticals
+  let xStart = offX % size;
+  if (xStart < 0) xStart += size;
+
+  for (let x = xStart; x <= w; x += size) {
+    gridCtx.beginPath();
+    gridCtx.moveTo(x + 0.5, 0);
+    gridCtx.lineTo(x + 0.5, h);
+    gridCtx.stroke();
+  }
+
+  // Draw horizontals
+  let yStart = offY % size;
+  if (yStart < 0) yStart += size;
+
+  for (let y = yStart; y <= h; y += size) {
+    gridCtx.beginPath();
+    gridCtx.moveTo(0, y + 0.5);
+    gridCtx.lineTo(w, y + 0.5);
+    gridCtx.stroke();
+  }
+}
+
+function updateGridUI() {
+  const g = vttState.grid;
+  if (!g) return;
+
+  if (btnGrid) btnGrid.textContent = `Grid: ${g.show ? "On" : "Off"}`;
+  if (btnSnap) btnSnap.textContent = `Snap: ${g.snap ? "On" : "Off"}`;
+
+  if (gridReadout) {
+    gridReadout.textContent = `Grid: ${Math.round(g.size)}px • Offset: ${Math.round(g.offX)},${Math.round(g.offY)}`;
+  }
 }
 
 // ---------- Camera / world transform ----------
@@ -250,13 +369,17 @@ function enableTokenInput(tokenEl) {
     const encId = tokenEl.dataset.encId;
 
     if (e.ctrlKey) {
-    } else {
-      if (!selected.has(encId) || selected.size > 1) {
-        selected.clear();
-        selected.add(encId);
-      }
-    }
-    renderTokens();
+  // Ctrl-click toggles selection
+  if (selected.has(encId)) selected.delete(encId);
+  else selected.add(encId);
+} else {
+  // Normal click selects just this token
+  if (!selected.has(encId) || selected.size > 1) {
+    selected.clear();
+    selected.add(encId);
+  }
+}
+renderTokens();
 
     const start = pointerToWorld(e);
     const groupStart = [];
@@ -293,7 +416,27 @@ const onMove = (ev) => {
     if (!elx) return;
 
     const tokenSize = elx.querySelector("img")?.getBoundingClientRect().width || 56;
-    const clampedPos = clampTokenToStage(t.left + dx, t.top + dy, tokenSize);
+    let nextX = t.left + dx;
+let nextY = t.top + dy;
+
+const g = vttState.grid;
+if (g && g.snap) {
+  const size = Math.max(10, Number(g.size) || 70);
+  const offX = Number(g.offX) || 0;
+  const offY = Number(g.offY) || 0;
+
+  // Snap TOKEN CENTER to nearest grid intersection
+  const cx = nextX + tokenSize / 2;
+  const cy = nextY + tokenSize / 2;
+
+  const snapCx = Math.round((cx - offX) / size) * size + offX;
+  const snapCy = Math.round((cy - offY) / size) * size + offY;
+
+  nextX = snapCx - tokenSize / 2;
+  nextY = snapCy - tokenSize / 2;
+}
+
+const clampedPos = clampTokenToStage(nextX, nextY, tokenSize);
 
     elx.style.left = `${clampedPos.x}px`;
     elx.style.top = `${clampedPos.y}px`;
@@ -505,6 +648,52 @@ btnToggleMonsters?.addEventListener("click", () => {
   saveVttState();
   renderTokens();
 });
+btnGrid?.addEventListener("click", () => {
+  vttState.grid.show = !vttState.grid.show;
+  saveVttState();
+  updateGridUI();
+  drawGrid();
+});
+
+btnSnap?.addEventListener("click", () => {
+  vttState.grid.snap = !vttState.grid.snap;
+  saveVttState();
+  updateGridUI();
+});
+
+btnGridLg?.addEventListener("click", () => {
+  vttState.grid.size = clamp((vttState.grid.size || 70) + 5, 10, 300);
+  saveVttState();
+  updateGridUI();
+  drawGrid();
+});
+
+btnGridSm?.addEventListener("click", () => {
+  vttState.grid.size = clamp((vttState.grid.size || 70) - 5, 10, 300);
+  saveVttState();
+  updateGridUI();
+  drawGrid();
+});
+
+// Nudge = align overlay to printed grid
+const NUDGE = 2;
+
+btnNudgeL?.addEventListener("click", () => {
+  vttState.grid.offX = (vttState.grid.offX || 0) - NUDGE;
+  saveVttState(); updateGridUI(); drawGrid();
+});
+btnNudgeR?.addEventListener("click", () => {
+  vttState.grid.offX = (vttState.grid.offX || 0) + NUDGE;
+  saveVttState(); updateGridUI(); drawGrid();
+});
+btnNudgeU?.addEventListener("click", () => {
+  vttState.grid.offY = (vttState.grid.offY || 0) - NUDGE;
+  saveVttState(); updateGridUI(); drawGrid();
+});
+btnNudgeD?.addEventListener("click", () => {
+  vttState.grid.offY = (vttState.grid.offY || 0) + NUDGE;
+  saveVttState(); updateGridUI(); drawGrid();
+});
 
 document.addEventListener("fullscreenchange", () => {
   renderTokens();
@@ -513,6 +702,7 @@ document.addEventListener("fullscreenchange", () => {
 // ---------- Resize stability ----------
 const ro = new ResizeObserver(() => {
   renderTokens();
+  drawGrid();
 });
 ro.observe(mapStage);
 
@@ -540,4 +730,6 @@ function hydrateFromTracker() {
 
 applyCamera();
 applyTokenSize();
+updateGridUI();
+drawGrid();
 hydrateFromTracker();
