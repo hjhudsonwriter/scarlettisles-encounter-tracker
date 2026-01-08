@@ -139,7 +139,6 @@ document.getElementById("btnMonstersHide")?.addEventListener("click", () => {
 document.getElementById("btnMonstersReveal")?.addEventListener("click", () => {
   saveVttState({ hideMonsters: false, hidden: {} });
 });
-}
 
 
 /* ---------- DOM refs ---------- */
