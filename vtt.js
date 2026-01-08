@@ -117,8 +117,9 @@ function ensureGridCanvas() {
   if (gridCanvas) return;
 
   gridCanvas = document.createElement("canvas");
-  gridCanvas.id = "gridCanvas";
-  gridCanvas.style.opacity = String(vttState.grid?.opacity ?? 0.35);
+gridCanvas.id = "gridCanvas";
+gridCanvas.style.opacity = String(vttState.grid?.opacity ?? 0.35);
+gridCanvas.style.display = "none"; // drawGrid() will toggle it on/off
 
   // Put it above the map image but below tokens
   // mapWorld contains: img, tokenLayer, marquee
@@ -149,9 +150,14 @@ function drawGrid() {
 
   const g = vttState.grid;
   if (!g || !g.show) {
-    gridCtx.clearRect(0, 0, mapStage.clientWidth || 1, mapStage.clientHeight || 1);
-    return;
-  }
+  // Hide the canvas completely when grid is off
+  gridCanvas.style.display = "none";
+  gridCtx.clearRect(0, 0, mapStage.clientWidth || 1, mapStage.clientHeight || 1);
+  return;
+}
+
+// Show the canvas when grid is on
+gridCanvas.style.display = "block";
 
   gridCanvas.style.opacity = String(g.opacity ?? 0.35);
 
