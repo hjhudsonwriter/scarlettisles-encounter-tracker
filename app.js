@@ -167,6 +167,7 @@ const btnImportPdf = el("btnImportPdf");
 const btnResetAll = el("btnResetAll");
 const btnInstall = el("btnInstall");
 const btnOpenVtt = el("btnOpenVtt");
+const btnOpenStatBlock = el("btnOpenStatBlock");
 // ---------- VTT DM Control Panel helpers ----------
 
 // DM buttons (tracker-only)
@@ -284,6 +285,7 @@ function applyDamageAndMaybeCondition({ conditionOnly }) {
       const dmg = Number(dmgRaw);
       if (!Number.isFinite(dmg)) {
         alert("Damage must be a number.");
+         const btnOpenStatBlock = el("btnOpenStatBlock");
         return;
       }
       // Positive = damage, negative = healing (so subtract dmg)
@@ -358,6 +360,7 @@ function render() {
     inspectorMeta.textContent = "Start an encounter to see the active combatant.";
     inspectorAvatar.src = defaultAvatar("pc");
     inspectorStats.hidden = true;
+    if (btnOpenStatBlock) btnOpenStatBlock.hidden = true;
   } else {
     turnPill.textContent = `${current.name} (Init ${current.init ?? "—"})`;
 
@@ -367,6 +370,21 @@ function render() {
     inspectorAvatar.onerror = () => (inspectorAvatar.src = defaultAvatar(current.type));
     inspectorStats.hidden = false;
     inspectorHp.textContent = `HP: ${current.curHp}/${current.maxHp}`;
+     // Stat block link button (monsters only)
+if (btnOpenStatBlock) {
+  const link =
+    current.type === "monster" && current.refLink
+      ? current.refLink
+      : "";
+
+  if (link) {
+    btnOpenStatBlock.href = link;
+    btnOpenStatBlock.hidden = false;
+  } else {
+    btnOpenStatBlock.href = "#";
+    btnOpenStatBlock.hidden = true;
+  }
+}
 
     const condHtml =
       current.conditions && current.conditions.length
