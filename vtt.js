@@ -55,16 +55,14 @@ function saveMap(dataUrl) {
 }
 
 function loadVttState() {
-  const raw = localStorage.getItem(VTT_STATE_KEY);
-
   const fallback = {
     camera: { x: 0, y: 0, zoom: 1 },
-    tokenPos: {},        // encId -> {x,y} normalized
+    tokenPos: {},
     tokenSize: 56,
     hideMonsters: false
-    hidden: {} // encId -> true
   };
 
+  const raw = localStorage.getItem(VTT_STATE_KEY);
   if (!raw) return fallback;
 
   try {
@@ -73,7 +71,6 @@ function loadVttState() {
     s.tokenPos ||= {};
     s.tokenSize ??= 56;
     s.hideMonsters ??= false;
-    s.hidden ||= {};
     return s;
   } catch {
     return fallback;
