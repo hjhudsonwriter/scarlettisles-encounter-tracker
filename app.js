@@ -110,6 +110,7 @@ function setAddFormFromCombatant(c) {
   el("newMaxHp").value = c.maxHp ?? "";
   el("newInitBonus").value = (c.initBonus ?? "");
   el("newAvatar").value = c.avatar || "";
+  el("newRefLink").value = c.refLink || "";
 }
 
 function resetAddForm() {
@@ -118,6 +119,7 @@ function resetAddForm() {
   el("newMaxHp").value = "";
   el("newInitBonus").value = "";
   el("newAvatar").value = "";
+  el("newRefLink").value = "";
   btnAddToLibrary.textContent = "Add to Library";
   if (btnCancelEdit) btnCancelEdit.hidden = true;
 }
@@ -689,6 +691,7 @@ btnAddToLibrary.addEventListener("click", () => {
   const maxHp = Number(el("newMaxHp").value);
   const initBonusRaw = el("newInitBonus").value.trim();
   const avatar = el("newAvatar").value.trim();
+  const refLink = el("newRefLink")?.value.trim() || "";
 
   if (!name || !Number.isFinite(maxHp) || maxHp <= 0) {
     alert("Please enter a Name and a valid Max HP.");
@@ -731,20 +734,21 @@ r.name = `${existing.name}${suffix}`;
     return;
   }
 
-  // ADD NEW
-  state.library.push({
-    id: uid(),
-    name,
-    type,
-    maxHp: Math.floor(maxHp),
-    curHp: Math.floor(maxHp),
-    initBonus: (initBonusRaw === "" || !Number.isFinite(initBonus)) ? null : Math.floor(initBonus),
-    avatar: avatar || ""
-  });
+// ADD NEW
+state.library.push({
+  id: uid(),
+  name,
+  type,
+  maxHp: Math.floor(maxHp),
+  curHp: Math.floor(maxHp),
+  initBonus: (initBonusRaw === "" || !Number.isFinite(initBonus)) ? null : Math.floor(initBonus),
+  avatar: avatar || "",
+  refLink: refLink || ""
+});
 
-  saveState();
-  render();
-  resetAddForm();
+saveState();
+render();
+resetAddForm();
 });
 
 if (btnCancelEdit) {
