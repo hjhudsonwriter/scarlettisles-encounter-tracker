@@ -259,3 +259,15 @@ body.vtt .btn:not(.ghost):hover {
     0 10px 18px rgba(0,0,0,0.35);
   border-color: rgba(201,162,39,0.6);
 }
+/* Grid overlay canvas */
+#gridCanvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+}
+
+/* Optional: make grid readout sit nicely */
+#gridReadout {
+  margin-left: 6px;
+}
