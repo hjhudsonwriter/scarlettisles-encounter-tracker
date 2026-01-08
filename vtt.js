@@ -708,7 +708,21 @@ ro.observe(mapStage);
 
 // ---------- Cross-tab updates ----------
 window.addEventListener("storage", (e) => {
-  if (e.key === STORAGE_KEY) hydrateFromTracker();
+  if (e.key === STORAGE_KEY) {
+    hydrateFromTracker();
+    return;
+  }
+
+  if (e.key === VTT_STATE_KEY) {
+    // Another tab (the tracker) changed VTT settings (hide monsters, grid, snap, etc.)
+    vttState = loadVttState();
+    applyCamera();
+    applyTokenSize();
+    renderTokens();
+
+    // If your grid code uses a drawGrid() function, call it here too:
+    if (typeof drawGrid === "function") drawGrid();
+  }
 });
 
 // ---------- Boot ----------
