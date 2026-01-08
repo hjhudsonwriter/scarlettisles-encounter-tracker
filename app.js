@@ -8,7 +8,6 @@
 */
 
 const STORAGE_KEY = "encounterTracker.v1";
-const VTT_STATE_KEY = "encounterTracker.vtt.state";
 
 /* ---------- Utilities ---------- */
 const el = (id) => document.getElementById(id);
