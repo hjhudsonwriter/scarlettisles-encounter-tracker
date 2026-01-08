@@ -88,11 +88,12 @@ function loadVttState() {
 
     // Fog of War
     fog: {
-      enabled: false,
-      revealAll: true,      // when fog is "off", we treat it as revealed
-      radiusSquares: 6,
-      opacity: 0.90
-    }
+  enabled: false,
+  revealAll: true,
+  radiusSquares: 6,
+  opacity: 0.90,
+  revealed: {} // stores revealed grid cells permanently
+}
   };
 
   const raw = localStorage.getItem(VTT_STATE_KEY);
@@ -121,6 +122,7 @@ function loadVttState() {
     s.fog.revealAll ??= fallback.fog.revealAll;
     s.fog.radiusSquares ??= fallback.fog.radiusSquares;
     s.fog.opacity ??= fallback.fog.opacity;
+    s.fog.revealed ||= {};
 
     return s;
   } catch {
@@ -277,7 +279,58 @@ function fogRadiusPx() {
 
   return squares * size;
 }
+function cellKey(cx, cy) {
+  return `${cx},${cy}`;
+}
 
+function worldToCell(wx, wy) {
+  const g = vttState.grid;
+  const size = Math.max(10, Number(g.size) || 70);
+  const offX = Number(g.offX) || 0;
+  const offY = Number(g.offY) || 0;
+
+  const cx = Math.floor((wx - offX) / size);
+  const cy = Math.floor((wy - offY) / size);
+  return { cx, cy };
+}
+
+function revealCellsAroundWorldPoint(wx, wy) {
+  const fog = vttState.fog;
+  if (!fog || fog.revealAll) return;
+
+  fog.revealed ||= {};
+
+  const { cx, cy } = worldToCell(wx, wy);
+  const r = Math.max(1, Number(fog.radiusSquares) || 6);
+
+  for (let dy = -r; dy <= r; dy++) {
+    for (let dx = -r; dx <= r; dx++) {
+      // circle-ish reveal (not a square)
+      if ((dx * dx + dy * dy) > (r * r)) continue;
+      fog.revealed[cellKey(cx + dx, cy + dy)] = 1;
+    }
+  }
+}
+
+function updatePersistentFogFromPCs() {
+  // Reveal from PCs only (so monsters don't reveal the map)
+  roster.forEach((c) => {
+    if (c.type !== "pc") return;
+    const pos = vttState.tokenPos[c.encId];
+    if (!pos) return;
+
+    const { x, y } = normToPx(pos.x, pos.y);
+    const tokenSize = Number(vttState.tokenSize) || 56;
+
+    // Use token center in WORLD coords
+    const cx = x + tokenSize / 2;
+    const cy = y + tokenSize / 2;
+
+    revealCellsAroundWorldPoint(cx, cy);
+  });
+
+  saveVttState();
+}
 function drawFog() {
   ensureFogCanvas();
   resizeFogCanvas();
@@ -302,9 +355,41 @@ function drawFog() {
   fogCtx.fillRect(0, 0, w, h);
 
   // Cut holes around PCs
-  const r = fogRadiusPx();
+  const fog = vttState.fog;
+const g = vttState.grid;
 
-  fogCtx.globalCompositeOperation = "destination-out";
+if (!fog || !fog.enabled || fog.revealAll) {
+  // reveal all = no fog
+  fogCtx.clearRect(0, 0, w, h);
+  return;
+}
+
+// draw full cover first
+fogCtx.clearRect(0, 0, w, h);
+fogCtx.globalCompositeOperation = "source-over";
+fogCtx.fillStyle = `rgba(0,0,0,${fog.opacity ?? 0.9})`;
+fogCtx.fillRect(0, 0, w, h);
+
+// punch holes for revealed cells
+fogCtx.globalCompositeOperation = "destination-out";
+
+const size = Math.max(10, Number(g.size) || 70);
+const offX = Number(g.offX) || 0;
+const offY = Number(g.offY) || 0;
+
+fog.revealed ||= {};
+
+Object.keys(fog.revealed).forEach((k) => {
+  const [cx, cy] = k.split(",").map(Number);
+  const x = offX + cx * size;
+  const y = offY + cy * size;
+
+  // Reveal this grid square
+  fogCtx.fillRect(x, y, size, size);
+});
+
+// back to normal drawing mode
+fogCtx.globalCompositeOperation = "source-over";
 
   // Find PC token centers from current DOM positions
   roster
@@ -586,6 +671,10 @@ const clampedPos = clampTokenToStage(nextX, nextY, tokenSize);
   });
 
   saveVttState();
+  if (vttState.fog?.enabled && !vttState.fog?.revealAll) {
+  updatePersistentFogFromPCs();
+  if (typeof drawFog === "function") drawFog();
+}
 };
 
 const onUp = () => {
@@ -745,7 +834,10 @@ mapStage.addEventListener("pointerup", () => {
 // ---------- Buttons (bind once) ----------
 btnFog?.addEventListener("click", () => {
   vttState.fog.enabled = !vttState.fog.enabled;
-  if (!vttState.fog.enabled) vttState.fog.revealAll = true; // when off, treat as revealed
+  if (!vttState.fog.enabled) {
+    vttState.fog.revealAll = true;   // when off, treat as revealed
+    vttState.fog.revealed = {};      // optional: wipe memory when turning fog off
+  }
   saveVttState();
   updateFogUI();
   drawFog();
@@ -762,6 +854,7 @@ btnFogAll?.addEventListener("click", () => {
 btnFogCover?.addEventListener("click", () => {
   vttState.fog.enabled = true;
   vttState.fog.revealAll = false;
+  vttState.fog.revealed = {}; // <-- ADD THIS LINE (wipes explored memory)
   saveVttState();
   updateFogUI();
   drawFog();
