@@ -744,6 +744,7 @@ btnAddToLibrary.addEventListener("click", () => {
     existing.curHp = Math.min(existing.curHp ?? existing.maxHp, existing.maxHp);
     existing.initBonus = (initBonusRaw === "" || !Number.isFinite(initBonus)) ? null : Math.floor(initBonus);
     existing.avatar = avatar || "";
+    existing.refLink = refLink || "";
 
     // Also update any encounter roster entries that were created from this base combatant
     state.encounter.roster.forEach(r => {
