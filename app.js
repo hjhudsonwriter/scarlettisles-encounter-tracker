@@ -284,10 +284,10 @@ function applyDamageAndMaybeCondition({ conditionOnly }) {
     if (dmgRaw !== "") {
       const dmg = Number(dmgRaw);
       if (!Number.isFinite(dmg)) {
-        alert("Damage must be a number.");
-         const btnOpenStatBlock = el("btnOpenStatBlock");
-        return;
-      }
+  alert("Damage must be a number.");
+  return;
+}
+
       // Positive = damage, negative = healing (so subtract dmg)
       target.curHp = clamp(target.curHp - Math.floor(dmg), 0, target.maxHp);
       damageInput.value = "";
@@ -361,7 +361,6 @@ function render() {
     inspectorAvatar.src = defaultAvatar("pc");
     inspectorStats.hidden = true;
     if (btnOpenStatBlock) btnOpenStatBlock.hidden = true;
-    if (btnOpenStatBlock) btnOpenStatBlock.hidden = true;
   } else {
     turnPill.textContent = `${current.name} (Init ${current.init ?? "—"})`;
 
@@ -372,7 +371,6 @@ function render() {
     inspectorStats.hidden = false;
     inspectorHp.textContent = `HP: ${current.curHp}/${current.maxHp}`;
 
-    console.log("STATBLOCK DEBUG:", current.name, current.type, current.refLink);
      
      // Stat block link button (monsters only)
 if (btnOpenStatBlock) {
@@ -623,17 +621,18 @@ if (btnOpenStatBlock) {
 
             state.encounter.name = se.name || "";
             state.encounter.roster = (se.roster || []).map(x => ({
-              encId: uid(),
-              baseId: x.baseId || null,
-              name: x.name,
-              type: x.type,
-              maxHp: x.maxHp,
-              curHp: x.maxHp,
-              init: x.init ?? null,
-              avatar: x.avatar || "",
-              conditions: [],
-              defeated: false
-            }));
+  encId: uid(),
+  baseId: x.baseId || null,
+  name: x.name,
+  type: x.type,
+  maxHp: x.maxHp,
+  curHp: x.maxHp,
+  init: x.init ?? null,
+  avatar: x.avatar || "",
+  refLink: x.refLink || "",
+  conditions: [],
+  defeated: false
+}));
             state.encounter.turnIndex = 0;
             state.encounter.round = 1;
             state.encounter.status = "ready";
@@ -740,16 +739,18 @@ btnAddToLibrary.addEventListener("click", () => {
 
     // Also update any encounter roster entries that were created from this base combatant
     state.encounter.roster.forEach(r => {
-      if (r.baseId === existing.id) {
-        const suffixMatch = String(r.name).match(/\s([a-z])$/i);
-const suffix = suffixMatch ? ` ${suffixMatch[1]}` : "";
-r.name = `${existing.name}${suffix}`;
-        r.type = existing.type;
-        r.maxHp = existing.maxHp;
-        r.avatar = existing.avatar || "";
-        r.curHp = Math.min(r.curHp, r.maxHp);
-      }
-    });
+  if (r.baseId === existing.id) {
+    const suffixMatch = String(r.name).match(/\s([a-z])$/i);
+    const suffix = suffixMatch ? ` ${suffixMatch[1]}` : "";
+
+    r.name = `${existing.name}${suffix}`;
+    r.type = existing.type;
+    r.maxHp = existing.maxHp;
+    r.avatar = existing.avatar || "";
+    r.refLink = existing.refLink || "";
+    r.curHp = Math.min(r.curHp, r.maxHp);
+  }
+});
 
     saveState();
     render();
@@ -938,13 +939,14 @@ btnSaveEncounter?.addEventListener("click", () => {
     name,
     updatedAt: new Date().toISOString(),
     roster: enc.roster.map(c => ({
-      baseId: c.baseId || null,
-      name: c.name,
-      type: c.type,
-      maxHp: c.maxHp,
-      init: c.init ?? null,
-      avatar: c.avatar || ""
-    }))
+  baseId: c.baseId || null,
+  name: c.name,
+  type: c.type,
+  maxHp: c.maxHp,
+  init: c.init ?? null,
+  avatar: c.avatar || "",
+  refLink: c.refLink || ""
+}))
   };
 
   state.savedEncounters.push(snapshot);
@@ -998,7 +1000,8 @@ btnImportJson?.addEventListener("click", async () => {
         maxHp,
         curHp: maxHp,
         initBonus: (x.initBonus == null ? null : Math.floor(Number(x.initBonus))),
-        avatar: x.avatar || ""
+        avatar: x.avatar || "",
+refLink: x.refLink || ""
       });
       existingKey.add(key);
     }
