@@ -476,75 +476,136 @@ body::before {
   pointer-events: none;
   z-index: -1;
 }
-/* ===== Permanent Dark Mode (Tracker) ===== */
-body {
-  --bg: #0f1115;
-  --paper: rgba(18, 20, 26, 0.92);
-  --paper2: rgba(26, 29, 38, 0.88);
-  --ink: #f3f0e8;
-  --muted: rgba(243, 240, 232, 0.66);
+/* =========================================================
+   TRACKER PERMANENT DARK THEME (match VTT look)
+   Applies to the main tracker only (NOT vtt.html)
+   ========================================================= */
+body:not(.vtt){
+  /* VTT-ish palette */
+  --bg: #0e0f12;
+  --paper: rgba(20, 21, 26, 0.86);
+  --paper2: rgba(20, 21, 26, 0.72);
+  --ink: rgba(231,231,234,0.92);
+  --muted: rgba(231,231,234,0.70);
+  --line: rgba(255,255,255,0.10);
+  --shadow: 0 16px 36px rgba(0,0,0,0.55);
 
-  --line: rgba(243, 240, 232, 0.10);
-  --shadow: 0 18px 44px rgba(0,0,0,.55);
+  background: #0e0f12 !important;
+  color: var(--ink);
+}
 
-  --scarlet:#7a0f1a;
-  --scarlet2:#a31625;
-  --gold:#c9a227;
-  --gold2:#e2c15a;
+/* Topbar */
+body:not(.vtt) .topbar{
+  background: rgba(20, 21, 26, 0.92) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
 
-  background:
-    radial-gradient(900px 420px at 18% 0%, rgba(201,162,39,.10), transparent 60%),
-    radial-gradient(900px 420px at 90% 0%, rgba(122,15,26,.10), transparent 55%),
-    linear-gradient(180deg, #07080b, var(--bg));
+body:not(.vtt) .brandTitle{
+  color: var(--ink) !important;
+}
+body:not(.vtt) .brandSub{
+  color: var(--muted) !important;
 }
 
 /* Panels */
-.panel{
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
-    var(--paper);
+body:not(.vtt) .panel{
+  background: rgba(20, 21, 26, 0.86) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.35) !important;
 }
 
-/* Panel headers */
-.panelHead{
-  background:
-    linear-gradient(90deg, rgba(122,15,26,.18), transparent 40%),
-    linear-gradient(90deg, rgba(201,162,39,.14), transparent 50%);
+body:not(.vtt) .panelHead{
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+  background: rgba(20, 21, 26, 0.70) !important;
 }
-
-/* Inputs */
-input,
-select{
-  background: rgba(0,0,0,.25);
-  color: var(--ink);
-  border-color: var(--line);
+body:not(.vtt) .panelHead h2{ color: var(--ink) !important; }
+body:not(.vtt) .panelHead p,
+body:not(.vtt) .muted,
+body:not(.vtt) .hint{
+  color: var(--muted) !important;
 }
 
 /* Tabs */
-.tab{
-  background: rgba(255,255,255,.05);
-  color: rgba(243,240,232,.72);
-  border-color: var(--line);
+body:not(.vtt) .tab{
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  color: rgba(231,231,234,0.78) !important;
 }
-.tab.active{
-  color:#fff;
+body:not(.vtt) .tab:hover{
+  border-color: rgba(255,255,255,0.22) !important;
+}
+body:not(.vtt) .tab.active{
+  color: #fff !important;
+  background: linear-gradient(180deg, var(--scarlet2), var(--scarlet)) !important;
+  border-color: rgba(122,15,26,0.55) !important;
 }
 
-/* Lists / items */
-.item{
-  background: rgba(255,255,255,.05);
-  border-color: var(--line);
+/* Inputs + selects */
+body:not(.vtt) label{ color: var(--muted) !important; }
+
+body:not(.vtt) input,
+body:not(.vtt) select{
+  background: rgba(0,0,0,0.35) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  color: var(--ink) !important;
 }
+body:not(.vtt) input::placeholder{ color: rgba(231,231,234,0.45) !important; }
 
 /* Buttons */
-.btn.ghost{
-  background: rgba(255,255,255,.06);
-  border-color: var(--line);
-  color: var(--ink);
+body:not(.vtt) .btn{
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  color: var(--ink) !important;
+}
+body:not(.vtt) .btn:hover{
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.26) !important;
+}
+body:not(.vtt) .btn:not(.ghost){
+  border-color: rgba(122, 15, 26, 0.35) !important;
+  background: linear-gradient(180deg, rgba(122, 15, 26, 0.28), rgba(122, 15, 26, 0.16)) !important;
+}
+body:not(.vtt) .btn:not(.ghost):hover{
+  border-color: rgba(122, 15, 26, 0.55) !important;
+  background: linear-gradient(180deg, rgba(122, 15, 26, 0.34), rgba(122, 15, 26, 0.20)) !important;
 }
 
-/* Background logo softer in dark */
-body::before{
-  opacity: 0.06;
-  filter: blur(1px);
+/* Lists / rows */
+body:not(.vtt) .item{
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+body:not(.vtt) .item:hover{
+  border-color: rgba(255,255,255,0.16) !important;
+  background: rgba(255,255,255,0.06) !important;
+}
+body:not(.vtt) .itemTitle,
+body:not(.vtt) .boardName .nameText{
+  color: var(--ink) !important;
+}
+
+/* Badges */
+body:not(.vtt) .badge{
+  background: rgba(0,0,0,0.35) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  color: rgba(231,231,234,0.88) !important;
+}
+body:not(.vtt) .badge.pc{
+  border-color: rgba(201,162,39,0.35) !important;
+}
+body:not(.vtt) .badge.monster{
+  border-color: rgba(122,15,26,0.35) !important;
+}
+
+/* Current turn highlight (keep your gold vibe, readable in dark) */
+body:not(.vtt) .currentTurn{
+  border-color: rgba(201,162,39,0.55) !important;
+  box-shadow: 0 0 0 3px rgba(201,162,39,0.18) !important;
+  background: rgba(201,162,39,0.10) !important;
+}
+
+/* Background logo behind panels: reduce glare in dark */
+body:not(.vtt)::before{
+  opacity: 0.06 !important;
+  filter: grayscale(1) contrast(1.1);
 }
