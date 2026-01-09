@@ -476,3 +476,75 @@ body::before {
   pointer-events: none;
   z-index: -1;
 }
+/* ===== Permanent Dark Mode (Tracker) ===== */
+body {
+  --bg: #0f1115;
+  --paper: rgba(18, 20, 26, 0.92);
+  --paper2: rgba(26, 29, 38, 0.88);
+  --ink: #f3f0e8;
+  --muted: rgba(243, 240, 232, 0.66);
+
+  --line: rgba(243, 240, 232, 0.10);
+  --shadow: 0 18px 44px rgba(0,0,0,.55);
+
+  --scarlet:#7a0f1a;
+  --scarlet2:#a31625;
+  --gold:#c9a227;
+  --gold2:#e2c15a;
+
+  background:
+    radial-gradient(900px 420px at 18% 0%, rgba(201,162,39,.10), transparent 60%),
+    radial-gradient(900px 420px at 90% 0%, rgba(122,15,26,.10), transparent 55%),
+    linear-gradient(180deg, #07080b, var(--bg));
+}
+
+/* Panels */
+.panel{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
+    var(--paper);
+}
+
+/* Panel headers */
+.panelHead{
+  background:
+    linear-gradient(90deg, rgba(122,15,26,.18), transparent 40%),
+    linear-gradient(90deg, rgba(201,162,39,.14), transparent 50%);
+}
+
+/* Inputs */
+input,
+select{
+  background: rgba(0,0,0,.25);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+/* Tabs */
+.tab{
+  background: rgba(255,255,255,.05);
+  color: rgba(243,240,232,.72);
+  border-color: var(--line);
+}
+.tab.active{
+  color:#fff;
+}
+
+/* Lists / items */
+.item{
+  background: rgba(255,255,255,.05);
+  border-color: var(--line);
+}
+
+/* Buttons */
+.btn.ghost{
+  background: rgba(255,255,255,.06);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+/* Background logo softer in dark */
+body::before{
+  opacity: 0.06;
+  filter: blur(1px);
+}
