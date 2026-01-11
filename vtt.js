@@ -37,6 +37,8 @@ const btnFogCover = el("btnFogCover");
 const btnFogSm = el("btnFogSm");
 const btnFogLg = el("btnFogLg");
 const fogReadout = el("fogReadout");
+const btnMeasure = el("btnMeasure");
+const measureReadout = el("measureReadout");
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -630,6 +632,16 @@ window.addEventListener("keyup", (e) => {
 });
 
 mapStage.addEventListener("pointerdown", (e) => {
+    if (measureState.enabled && !keys.space && !e.ctrlKey) {
+    // Start measuring
+    measureState.dragging = true;
+    measureState.a = pointerToWorld(e);
+    measureState.b = measureState.a;
+
+    mapStage.setPointerCapture(e.pointerId);
+    e.preventDefault();
+    return;
+  }
   if (e.ctrlKey && !keys.space) {
     startMarquee(e);
     return;
@@ -667,12 +679,34 @@ mapStage.addEventListener("pointermove", (e) => {
   applyCamera();
 });
 
+mapStage.addEventListener("pointermove", (e) => {
+  if (!measureState.enabled || !measureState.dragging) return;
+  measureState.b = pointerToWorld(e);
+  drawMeasureLine();
+});
+
 mapStage.addEventListener("pointerup", () => {
   camera.isPanning = false;
+
+  if (measureState.dragging) {
+    measureState.dragging = false;
+    measureState.a = null;
+    measureState.b = null;
+    if (measureReadout) measureReadout.hidden = true;
+    clearMeasure();
+  }
 });
 
 mapStage.addEventListener("pointercancel", () => {
   camera.isPanning = false;
+  
+  if (measureState.dragging) {
+    measureState.dragging = false;
+    measureState.a = null;
+    measureState.b = null;
+    if (measureReadout) measureReadout.hidden = true;
+    clearMeasure();
+  }
 });
 
 // ---------- Ctrl + wheel zoom ----------
@@ -827,6 +861,20 @@ btnFullscreen?.addEventListener("click", async () => {
   else await document.exitFullscreen();
 });
 
+btnMeasure?.addEventListener("click", () => {
+  measureState.enabled = !measureState.enabled;
+  btnMeasure.classList.toggle("isOn", measureState.enabled);
+
+  // If turning off, clean up
+  if (!measureState.enabled){
+    measureState.dragging = false;
+    measureState.a = null;
+    measureState.b = null;
+    if (measureReadout) measureReadout.hidden = true;
+    clearMeasure();
+  }
+});
+
 btnToggleMonsters?.addEventListener("click", () => {
   vttState.hideMonsters = !vttState.hideMonsters;
   if (btnToggleMonsters) {
@@ -911,6 +959,99 @@ window.addEventListener("storage", (e) => {
     if (typeof drawGrid === "function") drawGrid();
   }
 });
+
+// ---------- Measure tool (ruler) ----------
+let measureCanvas = null;
+let measureCtx = null;
+
+const measureState = {
+  enabled: false,
+  dragging: false,
+  a: null,
+  b: null
+};
+
+function ensureMeasureCanvas(){
+  if (measureCanvas) return;
+
+  measureCanvas = document.createElement("canvas");
+  measureCanvas.id = "measureCanvas";
+  measureCanvas.style.position = "absolute";
+  measureCanvas.style.inset = "0";
+  measureCanvas.style.zIndex = "25";
+  measureCanvas.style.pointerEvents = "none";
+
+  // Put above fog/tokens? We insert before marquee so marquee stays top-most.
+  mapWorld.insertBefore(measureCanvas, marquee);
+
+  measureCtx = measureCanvas.getContext("2d");
+}
+
+function resizeMeasureCanvas(){
+  if (!measureCanvas) return;
+
+  const w = mapStage.clientWidth || 1;
+  const h = mapStage.clientHeight || 1;
+  const dpr = window.devicePixelRatio || 1;
+
+  measureCanvas.width = Math.floor(w * dpr);
+  measureCanvas.height = Math.floor(h * dpr);
+  measureCanvas.style.width = `${w}px`;
+  measureCanvas.style.height = `${h}px`;
+
+  measureCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function clearMeasure(){
+  if (!measureCanvas) return;
+  resizeMeasureCanvas();
+  measureCtx.clearRect(0, 0, mapStage.clientWidth || 1, mapStage.clientHeight || 1);
+}
+
+function distanceFeet(a, b){
+  const g = vttState.grid || {};
+  const size = Math.max(10, Number(g.size) || 70); // px per square
+  const dx = (b.x - a.x);
+  const dy = (b.y - a.y);
+  const distPx = Math.hypot(dx, dy);
+  const squares = distPx / size;
+  const feet = squares * 5;
+  return { squares, feet };
+}
+
+function drawMeasureLine(){
+  ensureMeasureCanvas();
+  resizeMeasureCanvas();
+  clearMeasure();
+
+  if (!measureState.dragging || !measureState.a || !measureState.b) return;
+
+  const a = measureState.a;
+  const b = measureState.b;
+
+  // Line
+  measureCtx.lineWidth = 2;
+  measureCtx.strokeStyle = "rgba(201,162,39,0.95)";
+  measureCtx.beginPath();
+  measureCtx.moveTo(a.x, a.y);
+  measureCtx.lineTo(b.x, b.y);
+  measureCtx.stroke();
+
+  // End caps
+  measureCtx.fillStyle = "rgba(201,162,39,0.95)";
+  measureCtx.beginPath();
+  measureCtx.arc(a.x, a.y, 4, 0, Math.PI * 2);
+  measureCtx.arc(b.x, b.y, 4, 0, Math.PI * 2);
+  measureCtx.fill();
+
+  // Readout
+  const { squares, feet } = distanceFeet(a, b);
+  const feetRounded = Math.round(feet / 5) * 5; // snap readout to 5ft steps
+  if (measureReadout){
+    measureReadout.hidden = false;
+    measureReadout.textContent = `${feetRounded} ft (${squares.toFixed(1)} sq)`;
+  }
+}
 
 // ---------- Boot ----------
 function hydrateFromTracker() {
