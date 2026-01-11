@@ -606,6 +606,66 @@ body:not(.vtt) .currentTurn{
 
 /* Background logo behind panels: reduce glare in dark */
 body:not(.vtt)::before{
+   
   opacity: 0.06 !important;
   filter: grayscale(1) contrast(1.1);
+}
+
+/* =========================================================
+   TRACKER DARK MODE POLISH (readability + dark subcards)
+   Paste BELOW the main dark theme block
+   ========================================================= */
+
+body:not(.vtt) .sectionTitle{
+  color: rgba(231,231,234,0.92) !important;
+}
+
+body:not(.vtt) .field label{
+  color: rgba(231,231,234,0.72) !important;
+}
+
+body:not(.vtt) .pill{
+  color: rgba(231,231,234,0.90) !important;
+  background: rgba(0,0,0,0.28) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+}
+
+body:not(.vtt) .hint,
+body:not(.vtt) .tiny,
+body:not(.vtt) .muted{
+  color: rgba(231,231,234,0.68) !important;
+}
+
+/* Fix the "turn pill" / status bar text in the center bottom */
+body:not(.vtt) #turnPill{
+  color: rgba(231,231,234,0.90) !important;
+}
+
+/* Make right-panel subcards dark like the rest (your red arrows) */
+body:not(.vtt) .subcard{
+  background: rgba(20,21,26,0.86) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+/* The inspector header area (HP pill etc.) */
+body:not(.vtt) .inspectorTop h2,
+body:not(.vtt) .inspectorTop p{
+  color: rgba(231,231,234,0.90) !important;
+}
+
+body:not(.vtt) #inspectorHp{
+  color: rgba(231,231,234,0.92) !important;
+  background: rgba(201,162,39,0.14) !important; /* keeps your gold vibe */
+  border: 1px solid rgba(201,162,39,0.25) !important;
+}
+
+/* Make the “Round & Momentum” panel text readable + dark (red arrow area) */
+body:not(.vtt) #momentumText{
+  color: rgba(231,231,234,0.78) !important;
+}
+
+/* Any stray light text inside subcards */
+body:not(.vtt) .subcard,
+body:not(.vtt) .subcard *{
+  color: rgba(231,231,234,0.86);
 }
