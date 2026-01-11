@@ -632,6 +632,8 @@ window.addEventListener("keyup", (e) => {
 });
 
 mapStage.addEventListener("pointerdown", (e) => {
+    // If clicking UI buttons inside the stage, do nothing here
+  if (e.target && e.target.closest && e.target.closest("#btnMeasure")) return;
     if (measureState.enabled && !keys.space && !e.ctrlKey) {
     // Start measuring
     measureState.dragging = true;
@@ -861,11 +863,12 @@ btnFullscreen?.addEventListener("click", async () => {
   else await document.exitFullscreen();
 });
 
-btnMeasure?.addEventListener("click", () => {
+btnMeasure?.addEventListener("click", (e) => {
+  e.stopPropagation(); // IMPORTANT: don't let mapStage treat this as a measure drag
+
   measureState.enabled = !measureState.enabled;
   btnMeasure.classList.toggle("isOn", measureState.enabled);
 
-  // If turning off, clean up
   if (!measureState.enabled){
     measureState.dragging = false;
     measureState.a = null;
@@ -873,6 +876,11 @@ btnMeasure?.addEventListener("click", () => {
     if (measureReadout) measureReadout.hidden = true;
     clearMeasure();
   }
+});
+
+// Also block pointerdown so click can complete normally
+btnMeasure?.addEventListener("pointerdown", (e) => {
+  e.stopPropagation();
 });
 
 btnToggleMonsters?.addEventListener("click", () => {
