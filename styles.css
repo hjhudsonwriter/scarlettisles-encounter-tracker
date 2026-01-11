@@ -364,11 +364,17 @@ input:focus, select:focus{
 .boardTableHead,
 #encList .item{
   display:grid;
-  grid-template-columns: 56px 84px minmax(220px, 1fr) 120px minmax(180px, 0.9fr) 110px;
+  grid-template-columns: 56px 70px minmax(160px, 1fr) 100px minmax(0, 0.8fr) 96px;
   gap: 10px;
   align-items:center;
   width: 100%;
   box-sizing: border-box;
+}
+@media (max-width: 1200px){
+  .boardTableHead,
+  #encList .item{
+    grid-template-columns: 56px 60px minmax(140px, 1fr) 90px minmax(0, 0.6fr) 86px;
+  }
 }
 
 /* Header row styling */
