@@ -905,21 +905,28 @@ btnGrid?.addEventListener("click", () => {
   drawGrid();
 });
 
+// Grid size step: normal click = small, Shift+click = big
+function gridSizeStep(e){
+  return e && e.shiftKey ? 10 : 2;
+}
+
 btnSnap?.addEventListener("click", () => {
   vttState.grid.snap = !vttState.grid.snap;
   saveVttState();
   updateGridUI();
 });
 
-btnGridLg?.addEventListener("click", () => {
-  vttState.grid.size = clamp((vttState.grid.size || 70) + 5, 10, 300);
+btnGridLg?.addEventListener("click", (e) => {
+  const step = gridSizeStep(e);
+  vttState.grid.size = clamp((vttState.grid.size || 70) + step, 10, 300);
   saveVttState();
   updateGridUI();
   drawGrid();
 });
 
-btnGridSm?.addEventListener("click", () => {
-  vttState.grid.size = clamp((vttState.grid.size || 70) - 5, 10, 300);
+btnGridSm?.addEventListener("click", (e) => {
+  const step = gridSizeStep(e);
+  vttState.grid.size = clamp((vttState.grid.size || 70) - step, 10, 300);
   saveVttState();
   updateGridUI();
   drawGrid();
@@ -931,13 +938,15 @@ fsBtnGrid?.addEventListener("click", () => {
   saveVttState(); updateGridUI(); drawGrid();
 });
 
-fsBtnGridSm?.addEventListener("click", () => {
-  vttState.grid.size = clamp((vttState.grid.size || 70) - 5, 10, 300);
+fsBtnGridSm?.addEventListener("click", (e) => {
+  const step = gridSizeStep(e);
+  vttState.grid.size = clamp((vttState.grid.size || 70) - step, 10, 300);
   saveVttState(); updateGridUI(); drawGrid();
 });
 
-fsBtnGridLg?.addEventListener("click", () => {
-  vttState.grid.size = clamp((vttState.grid.size || 70) + 5, 10, 300);
+fsBtnGridLg?.addEventListener("click", (e) => {
+  const step = gridSizeStep(e);
+  vttState.grid.size = clamp((vttState.grid.size || 70) + step, 10, 300);
   saveVttState(); updateGridUI(); drawGrid();
 });
 
