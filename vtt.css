@@ -351,13 +351,13 @@ body.vtt .btn:not(.ghost):hover {
   white-space: nowrap;
 }
 /* ---------- Fullscreen sidebar ---------- */
-.vttSidebar{
+#vttSidebar{
   position: absolute;
   left: 10px;
   top: 50%;
   transform: translateY(-50%);
   z-index: 40;
-  display: none;            /* hidden unless fullscreen */
+  display: none;
   gap: 10px;
   padding: 10px;
   border-radius: 16px;
@@ -366,63 +366,11 @@ body.vtt .btn:not(.ghost):hover {
   backdrop-filter: blur(6px);
 }
 
-:fullscreen #mapStage .vttSidebar{
-  display: grid;            /* show in fullscreen */
-}
+/* Most reliable for your setup */
+#mapStage:fullscreen #vttSidebar{ display: grid; }
 
-.vttSideBtn{
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  user-select: none;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.16);
-  color: rgba(231,231,234,0.92);
-}
+/* Fallback that also works in some browsers */
+:fullscreen #vttSidebar{ display: grid; }
 
-.vttSideBtn.small{
-  width: 44px;
-  height: 38px;
-  border-radius: 12px;
-}
-
-.vttSideBtn.isOn{
-  border-color: rgba(201,162,39,0.65);
-  box-shadow: 0 0 0 3px rgba(201,162,39,0.18);
-}
-
-.vttSideRow{
-  display: grid;
-  grid-auto-flow: column;
-  gap: 8px;
-  justify-content: center;
-}
-
-.vttSideDivider{
-  height: 1px;
-  width: 100%;
-  background: rgba(255,255,255,0.12);
-  margin: 2px 0;
-}
-
-.vttSidePad{
-  display: grid;
-  gap: 8px;
-  justify-items: center;
-}
-
-/* keep your existing readout style, but anchor it nicely in the sidebar */
-.vttMeasureReadout{
-  pointer-events: none;
-  white-space: nowrap;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(0,0,0,0.65);
-  border: 1px solid rgba(255,255,255,0.16);
-  color: rgba(231,231,234,0.92);
-  font-size: 12px;
-  justify-self: start;
-}
+/* WebKit fallback */
+#mapStage:-webkit-full-screen #vttSidebar{ display: grid; }
