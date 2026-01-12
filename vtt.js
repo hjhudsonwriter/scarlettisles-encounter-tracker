@@ -39,6 +39,13 @@ const btnFogLg = el("btnFogLg");
 const fogReadout = el("fogReadout");
 const btnMeasure = el("btnMeasure");
 const measureReadout = el("measureReadout");
+const fsBtnGrid = el("fsBtnGrid");
+const fsBtnGridSm = el("fsBtnGridSm");
+const fsBtnGridLg = el("fsBtnGridLg");
+const fsBtnNudgeL = el("fsBtnNudgeL");
+const fsBtnNudgeR = el("fsBtnNudgeR");
+const fsBtnNudgeU = el("fsBtnNudgeU");
+const fsBtnNudgeD = el("fsBtnNudgeD");
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -916,6 +923,41 @@ btnGridSm?.addEventListener("click", () => {
   saveVttState();
   updateGridUI();
   drawGrid();
+});
+
+// Fullscreen sidebar grid controls (mirror the top controls)
+fsBtnGrid?.addEventListener("click", () => {
+  vttState.grid.show = !vttState.grid.show;
+  saveVttState(); updateGridUI(); drawGrid();
+});
+
+fsBtnGridSm?.addEventListener("click", () => {
+  vttState.grid.size = clamp((vttState.grid.size || 70) - 5, 10, 300);
+  saveVttState(); updateGridUI(); drawGrid();
+});
+
+fsBtnGridLg?.addEventListener("click", () => {
+  vttState.grid.size = clamp((vttState.grid.size || 70) + 5, 10, 300);
+  saveVttState(); updateGridUI(); drawGrid();
+});
+
+// Nudge amount matches your existing NUDGE logic
+const FS_NUDGE = 2;
+fsBtnNudgeL?.addEventListener("click", () => {
+  vttState.grid.offX = (vttState.grid.offX || 0) - FS_NUDGE;
+  saveVttState(); updateGridUI(); drawGrid();
+});
+fsBtnNudgeR?.addEventListener("click", () => {
+  vttState.grid.offX = (vttState.grid.offX || 0) + FS_NUDGE;
+  saveVttState(); updateGridUI(); drawGrid();
+});
+fsBtnNudgeU?.addEventListener("click", () => {
+  vttState.grid.offY = (vttState.grid.offY || 0) - FS_NUDGE;
+  saveVttState(); updateGridUI(); drawGrid();
+});
+fsBtnNudgeD?.addEventListener("click", () => {
+  vttState.grid.offY = (vttState.grid.offY || 0) + FS_NUDGE;
+  saveVttState(); updateGridUI(); drawGrid();
 });
 
 // Nudge = align overlay to printed grid
