@@ -1,5 +1,5 @@
 // Simple offline cache for GitHub Pages static hosting
-const CACHE_NAME = "encounter-tracker-cache-v3";
+const CACHE_NAME = "encounter-tracker-cache-v4";
 const ASSETS = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest", "./sw.js", "./logo.png", "./index.html", "./manifest.webmanifest", "./sw.js","./vtt.html",
 "./vtt.js",
 "./vtt.css",
