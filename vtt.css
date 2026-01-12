@@ -374,3 +374,43 @@ body.vtt .btn:not(.ghost):hover {
 
 /* WebKit fallback */
 #mapStage:-webkit-full-screen #vttSidebar{ display: grid; }
+
+/* Sidebar button styling */
+.vttSideBtn{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  user-select: none;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.16);
+  color: rgba(231,231,234,0.92);
+}
+
+.vttSideBtn.small{
+  width: 44px;
+  height: 38px;
+  border-radius: 12px;
+}
+
+.vttSideRow{
+  display: grid;
+  grid-auto-flow: column;
+  gap: 8px;
+  justify-content: center;
+}
+
+.vttSideDivider{
+  height: 1px;
+  width: 100%;
+  background: rgba(255,255,255,0.12);
+  margin: 2px 0;
+}
+
+.vttSidePad{
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+}
