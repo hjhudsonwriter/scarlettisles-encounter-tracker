@@ -102,6 +102,30 @@
 </button>
 <div id="measureReadout" class="vttMeasureReadout" hidden></div>
 </div>
+  <!-- Fullscreen sidebar (lives INSIDE mapStage so it exists in fullscreen) -->
+<div id="vttSidebar" class="vttSidebar">
+  <button id="btnMeasure" class="vttSideBtn" type="button" title="Measure distance">📏</button>
+
+  <div class="vttSideDivider"></div>
+
+  <button id="fsBtnGrid" class="vttSideBtn" type="button" title="Toggle grid overlay">Grid</button>
+
+  <div class="vttSideRow">
+    <button id="fsBtnGridSm" class="vttSideBtn small" type="button" title="Grid size −">−</button>
+    <button id="fsBtnGridLg" class="vttSideBtn small" type="button" title="Grid size +">+</button>
+  </div>
+
+  <div class="vttSidePad">
+    <button id="fsBtnNudgeU" class="vttSideBtn small" type="button">▲</button>
+    <div class="vttSideRow">
+      <button id="fsBtnNudgeL" class="vttSideBtn small" type="button">◀</button>
+      <button id="fsBtnNudgeR" class="vttSideBtn small" type="button">▶</button>
+    </div>
+    <button id="fsBtnNudgeD" class="vttSideBtn small" type="button">▼</button>
+  </div>
+
+  <div id="measureReadout" class="vttMeasureReadout" hidden></div>
+</div>
 </div>
         
       </div>
