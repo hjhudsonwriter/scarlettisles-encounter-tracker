@@ -316,7 +316,7 @@ body.vtt .btn:not(.ghost):hover {
   left: 10px;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 30; /* above tokens/fog */
+  z-index: 50; /* above tokens/fog */
   width: 42px;
   height: 42px;
   border-radius: 14px;
@@ -413,4 +413,19 @@ body.vtt .btn:not(.ghost):hover {
   display: grid;
   gap: 8px;
   justify-items: center;
+}
+/* In fullscreen, move the ruler to the right of the sidebar */
+#mapStage:fullscreen .vttFloatBtn{
+  left: 86px; /* 10px + sidebar width-ish */
+}
+#mapStage:fullscreen .vttMeasureReadout{
+  left: 134px; /* keep readout beside the button */
+}
+
+/* Safari/WebKit fallback */
+#mapStage:-webkit-full-screen .vttFloatBtn{
+  left: 86px;
+}
+#mapStage:-webkit-full-screen .vttMeasureReadout{
+  left: 134px;
 }
