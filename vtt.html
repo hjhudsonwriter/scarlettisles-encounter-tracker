@@ -98,12 +98,11 @@
   <div id="tokenLayer"></div>
   <div id="marquee" hidden></div>
 </div>
+    <!-- floating ruler (always visible, even not fullscreen) -->
+  <button id="btnMeasure" class="vttFloatBtn" type="button" title="Measure distance (Ruler)">📏</button>
+  <div id="measureReadout" class="vttMeasureReadout" hidden></div>
   <!-- Fullscreen sidebar (lives INSIDE mapStage so it exists in fullscreen) -->
 <div id="vttSidebar" class="vttSidebar">
-  <button id="btnMeasure" class="vttSideBtn" type="button" title="Measure distance">📏</button>
-
-  <div class="vttSideDivider"></div>
-
   <button id="fsBtnGrid" class="vttSideBtn" type="button" title="Toggle grid overlay">Grid</button>
 
   <div class="vttSideRow">
@@ -120,7 +119,6 @@
     <button id="fsBtnNudgeD" class="vttSideBtn small" type="button">▼</button>
   </div>
 
-  <div id="measureReadout" class="vttMeasureReadout" hidden></div>
 </div>
 </div>
         
