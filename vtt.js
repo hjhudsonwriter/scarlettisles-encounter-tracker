@@ -95,13 +95,16 @@ function loadVttState() {
       opacity: 0.35
     },
 
-    // Fog of War
-    fog: {
-      enabled: false,
-      revealAll: true,      // when fog is "off", we treat it as revealed
-      radiusSquares: 6,
-      opacity: 0.90
-    }
+      // Fog of War
+fog: {
+  enabled: false,
+  revealAll: true,        // when fog is "off", we treat it as revealed
+  radiusSquares: 6,
+  opacity: 0.90,
+
+  // NEW: persistent exploration memory (grid cells)
+  exploredCells: []       // array of "x,y" strings
+}
   };
 
   const raw = localStorage.getItem(VTT_STATE_KEY);
@@ -130,6 +133,7 @@ function loadVttState() {
     s.fog.revealAll ??= fallback.fog.revealAll;
     s.fog.radiusSquares ??= fallback.fog.radiusSquares;
     s.fog.opacity ??= fallback.fog.opacity;
+    s.fog.exploredCells ??= fallback.fog.exploredCells;
 
     return s;
   } catch {
@@ -309,6 +313,24 @@ function drawFog() {
   fogCtx.globalCompositeOperation = "source-over";
   fogCtx.fillStyle = `rgba(0,0,0,${clamp(Number(f.opacity) || 0.9, 0.05, 0.98)})`;
   fogCtx.fillRect(0, 0, w, h);
+
+  // NEW: persistent explored cells (do this before live “token circles” cutout)
+const exploredArr = Array.isArray(vttState.fog?.exploredCells) ? vttState.fog.exploredCells : [];
+if (exploredArr.length) {
+  const g = vttState.grid || {};
+  const size = Math.max(10, Number(g.size) || 70);
+
+  fogCtx.save();
+  fogCtx.globalCompositeOperation = "destination-out";
+
+  for (const key of exploredArr) {
+    const [cx, cy] = key.split(",").map(Number);
+    if (!Number.isFinite(cx) || !Number.isFinite(cy)) continue;
+    fogCtx.fillRect(cx * size, cy * size, size, size);
+  }
+
+  fogCtx.restore();
+}
 
   // Cut holes around PCs
   const r = fogRadiusPx();
@@ -516,6 +538,57 @@ function pointerToWorld(e) {
   return { x: (sx - x) / zoom, y: (sy - y) / zoom };
 }
 
+// ---------- Fog exploration stamping (persistent reveal) ----------
+function fogExploredSet() {
+  // Use a Set internally, store as array in vttState for persistence
+  const arr = Array.isArray(vttState.fog?.exploredCells) ? vttState.fog.exploredCells : [];
+  return new Set(arr);
+}
+
+function saveFogExploredSet(set) {
+  // Cap to avoid localStorage bloat (tweak if needed)
+  const MAX = 12000;
+  const arr = Array.from(set);
+  vttState.fog.exploredCells = (arr.length > MAX) ? arr.slice(arr.length - MAX) : arr;
+  saveVttState();
+}
+
+function stampExploredFromTokens() {
+  const f = vttState.fog || {};
+  if (!f.enabled || f.revealAll) return;
+
+  const g = vttState.grid || {};
+  const size = Math.max(10, Number(g.size) || 70); // px per square
+  const r = clamp(Number(f.radiusSquares) || 6, 1, 40);
+
+  const explored = fogExploredSet();
+
+  // Tokens that should reveal fog: PCs + NPCs (escort tokens)
+  const revealers = roster.filter(c => (c.type === "pc" || c.type === "npc") && !c.defeated && (c.curHp ?? 1) > 0);
+
+  revealers.forEach(c => {
+    const pos = vttState.tokenPos[c.encId];
+    if (!pos) return;
+
+    const p = normToPx(pos.x, pos.y);
+    const tokenSize = vttState.tokenSize || 56;
+    const cx = p.x + tokenSize / 2;
+    const cy = p.y + tokenSize / 2;
+
+    const cellX = Math.floor(cx / size);
+    const cellY = Math.floor(cy / size);
+
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        if ((dx * dx + dy * dy) > (r * r)) continue;
+        explored.add(`${cellX + dx},${cellY + dy}`);
+      }
+    }
+  });
+
+  saveFogExploredSet(explored);
+}
+
 // ---------- Drag tokens (supports multi-select) ----------
 function enableTokenInput(tokenEl) {
   tokenEl.addEventListener("pointerdown", (e) => {
@@ -604,8 +677,9 @@ const clampedPos = clampTokenToStage(nextX, nextY, tokenSize);
   });
 
   saveVttState();
+  stampExploredFromTokens();
 };
-
+    
 const onUp = () => {
 const listenEl = captureOk ? captureEl : window;
 
