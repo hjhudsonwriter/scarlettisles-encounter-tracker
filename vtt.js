@@ -41,6 +41,8 @@ const btnMeasure = el("btnMeasure");
 const measureReadout = el("measureReadout");
 const fsBtnGrid = el("fsBtnGrid");
 const fsBtnGridSm = el("fsBtnGridSm");
+const fsFogRange = el("fsFogRange");
+const fsFogReadout = el("fsFogReadout");
 const fsBtnGridLg = el("fsBtnGridLg");
 const fsBtnNudgeL = el("fsBtnNudgeL");
 const fsBtnNudgeR = el("fsBtnNudgeR");
@@ -370,6 +372,8 @@ function updateFogUI() {
     const r = Number(f.radiusSquares) || 6;
     fogReadout.textContent = `Fog: ${r} sq • ${f.revealAll ? "Revealed" : "Covered"}`;
   }
+  if (fsFogRange) fsFogRange.value = String(vttState.fog?.radiusSquares ?? 6);
+if (fsFogReadout) fsFogReadout.textContent = `Fog: ${vttState.fog?.radiusSquares ?? 6} sq`;
 }
 
 // ---------- Camera / world transform ----------
@@ -942,6 +946,14 @@ btnTokSm?.addEventListener("click", () => {
 btnFullscreen?.addEventListener("click", async () => {
   if (!document.fullscreenElement) await mapStage.requestFullscreen();
   else await document.exitFullscreen();
+});
+
+fsFogRange?.addEventListener("input", () => {
+  const n = clamp(Number(fsFogRange.value) || 6, 1, 40);
+  vttState.fog.radiusSquares = n;
+  saveVttState();
+  updateFogUI();
+  drawFog();
 });
 
 btnMeasure?.addEventListener("click", (e) => {
