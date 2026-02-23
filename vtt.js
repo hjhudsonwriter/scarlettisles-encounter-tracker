@@ -86,6 +86,7 @@ function loadVttState() {
     tokenPos: {},
     tokenSize: 56,
     hideMonsters: false,
+    removed: {},
 
     // Grid overlay + snap
     grid: {
@@ -117,6 +118,7 @@ fog: {
 
     s.camera ||= fallback.camera;
     s.tokenPos ||= {};
+    s.removed ||= {};
     s.tokenSize ??= fallback.tokenSize;
     s.hideMonsters ??= fallback.hideMonsters;
 
@@ -484,6 +486,15 @@ function renderTokens() {
   tokenEls.clear();
 
   roster.forEach((c) => {
+    // Auto-remove defeated monsters from the map
+if (c.type === "monster" && (c.defeated || (Number(c.curHp) <= 0))) {
+  return;
+}
+
+// Manual “removed from map” (flee, despawn, etc.)
+if (vttState.removed?.[c.encId]) {
+  return;
+}
     const token = document.createElement("div");
     token.className = "token";
     token.dataset.encId = c.encId;
@@ -602,6 +613,14 @@ function enableTokenInput(tokenEl) {
     e.stopPropagation();
 
     const encId = tokenEl.dataset.encId;
+    // Shift+Click = remove token from map (flee/despawn). Does NOT change tracker HP/defeated.
+if (e.shiftKey) {
+  vttState.removed ||= {};
+  vttState.removed[encId] = true;
+  saveVttState();
+  renderTokens();
+  return;
+}
 
     if (e.ctrlKey) {
   // Ctrl-click toggles selection
