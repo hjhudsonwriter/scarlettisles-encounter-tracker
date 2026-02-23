@@ -429,3 +429,18 @@ body.vtt .btn:not(.ghost):hover {
 #mapStage:-webkit-full-screen .vttMeasureReadout{
   left: 134px;
 }
+
+/* Fullscreen fog slider */
+.fsSlider{
+  width: 100%;
+}
+.fsLabel{
+  font-size: 12px;
+  opacity: 0.9;
+  margin-bottom: 6px;
+}
+.fsHint{
+  font-size: 12px;
+  opacity: 0.75;
+  margin-top: 6px;
+}
