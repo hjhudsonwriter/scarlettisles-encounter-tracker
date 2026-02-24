@@ -222,9 +222,15 @@ function findNextLivingIndex(enc, startIndex) {
   if (!enc.roster.length) return 0;
 
   let idx = ((startIndex % enc.roster.length) + enc.roster.length) % enc.roster.length;
+
   for (let i = 0; i < enc.roster.length; i++) {
     const c = enc.roster[idx];
-    if (c && !c.defeated && c.curHp > 0) return idx;
+
+    // NPCs do NOT take turns in initiative order
+    const isNpc = (c && c.type === "npc");
+
+    if (c && !isNpc && !c.defeated && c.curHp > 0) return idx;
+
     idx = (idx + 1) % enc.roster.length;
   }
   return 0;
@@ -842,7 +848,13 @@ btnAutoInit?.addEventListener("click", () => {
     c.init = d20() + bonus;
   });
 
-  enc.roster.sort((a, b) => (b.init - a.init) || a.name.localeCompare(b.name));
+  enc.roster.sort((a, b) => {
+  // NPCs always at the bottom (not part of initiative loop)
+  if (a.type === "npc" && b.type !== "npc") return 1;
+  if (b.type === "npc" && a.type !== "npc") return -1;
+
+  return (Number(b.init || 0) - Number(a.init || 0)) || a.name.localeCompare(b.name);
+});
   enc.turnIndex = 0;
   enc.round = 1;
   enc.status = "ready";
@@ -859,8 +871,13 @@ btnBegin?.addEventListener("click", () => {
   if (!enc.roster.length) return;
 
   enc.roster.forEach(c => { if (c.init == null) c.init = 0; });
-  enc.roster.sort((a, b) => (b.init - a.init) || a.name.localeCompare(b.name));
+  enc.roster.sort((a, b) => {
+  // NPCs always at the bottom (not part of initiative loop)
+  if (a.type === "npc" && b.type !== "npc") return 1;
+  if (b.type === "npc" && a.type !== "npc") return -1;
 
+  return (Number(b.init || 0) - Number(a.init || 0)) || a.name.localeCompare(b.name);
+});
   enc.status = "running";
   enc.turnIndex = findNextLivingIndex(enc, 0);
   enc.round = 1;
