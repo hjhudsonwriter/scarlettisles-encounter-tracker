@@ -51,6 +51,75 @@ const fsBtnNudgeR = el("fsBtnNudgeR");
 const fsBtnNudgeU = el("fsBtnNudgeU");
 const fsBtnNudgeD = el("fsBtnNudgeD");
 
+// ---------- Overlays (manual LOS cones etc) ----------
+const overlayLayer = document.getElementById("overlayLayer");
+const btnAddCone = document.getElementById("btnAddCone");
+const btnRemoveOverlay = document.getElementById("btnRemoveOverlay");
+const btnClearOverlays = document.getElementById("btnClearOverlays");
+
+// We store overlays in vtt state so they persist with the map (until cleared)
+function getOverlaysState() {
+  const s = loadVttState();
+  if (!Array.isArray(s.overlays)) s.overlays = [];
+  if (!Number.isFinite(s.overlayIdSeq)) s.overlayIdSeq = 1;
+  return s;
+}
+
+// Inject overlay CSS once (so you don't need to edit vtt.css)
+(function injectOverlayCssOnce(){
+  if (document.getElementById("overlay-css")) return;
+  const style = document.createElement("style");
+  style.id = "overlay-css";
+  style.textContent = `
+    #overlayLayer{
+      position:absolute;
+      inset:0;
+      pointer-events:none; /* individual overlays enable pointer-events */
+      z-index: 2; /* must stay under fog canvas (fog is added later above tokens) */
+    }
+    .vttOverlay{
+      position:absolute;
+      left:0; top:0;
+      width:240px;
+      height:220px;
+      transform-origin: 24px 50%;
+      pointer-events:auto;
+      cursor: grab;
+      user-select:none;
+      touch-action:none;
+      filter: drop-shadow(0 6px 18px rgba(0,0,0,.25));
+    }
+    .vttOverlay:active{ cursor: grabbing; }
+    .vttOverlay.selected{
+      outline: 2px solid rgba(201,162,39,.55);
+      box-shadow: 0 0 0 3px rgba(201,162,39,.18);
+      border-radius: 14px;
+    }
+    /* A simple cone/triangle */
+    .vttOverlay.cone::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: rgba(255,255,255,.18);
+      border: 1px solid rgba(255,255,255,.22);
+      clip-path: polygon(0% 50%, 100% 0%, 100% 100%);
+      border-radius: 10px;
+    }
+    .vttOverlay .nub{
+      position:absolute;
+      left:10px;
+      top:50%;
+      width:18px;
+      height:18px;
+      transform: translateY(-50%);
+      border-radius: 999px;
+      background: rgba(255,255,255,.25);
+      border: 1px solid rgba(255,255,255,.22);
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
@@ -495,6 +564,83 @@ function ensureDefaultPositions() {
     idx++;
   });
   saveVttState();
+}
+
+let selectedOverlayId = null;
+
+function renderOverlays() {
+  if (!overlayLayer) return;
+
+  const s = getOverlaysState();
+  overlayLayer.innerHTML = "";
+
+  s.overlays.forEach(o => {
+    const el = document.createElement("div");
+    el.className = `vttOverlay ${o.kind}` + (o.id === selectedOverlayId ? " selected" : "");
+    el.dataset.oid = String(o.id);
+
+    el.style.transform =
+      `translate(${o.x}px, ${o.y}px) rotate(${o.rot}deg) scaleX(${o.scaleX}) scaleY(${o.scaleY})`;
+
+    // small “origin nub”
+    const nub = document.createElement("div");
+    nub.className = "nub";
+    el.appendChild(nub);
+
+    // Select on click
+    el.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      selectedOverlayId = o.id;
+      if (btnRemoveOverlay) btnRemoveOverlay.disabled = false;
+      renderOverlays();
+    });
+
+    // Drag to move
+    el.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      el.setPointerCapture(e.pointerId);
+
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const startOx = o.x;
+      const startOy = o.y;
+
+      const onMove = (ev) => {
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+        o.x = startOx + dx;
+        o.y = startOy + dy;
+        saveVttState({ overlays: s.overlays, overlayIdSeq: s.overlayIdSeq });
+        renderOverlays();
+      };
+
+      const onUp = () => {
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+      };
+
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+    });
+
+    // Wheel = rotate. Shift+wheel = resize length (scaleX)
+    el.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      const delta = Math.sign(e.deltaY);
+      if (e.shiftKey) {
+        o.scaleX = Math.max(0.3, Math.min(5, o.scaleX + (delta * -0.05)));
+      } else {
+        o.rot = (o.rot + (delta * -4)) % 360;
+      }
+      saveVttState({ overlays: s.overlays, overlayIdSeq: s.overlayIdSeq });
+      renderOverlays();
+    }, { passive: false });
+
+    overlayLayer.appendChild(el);
+  });
+
+  // Nothing selected -> disable remove button
+  if (btnRemoveOverlay) btnRemoveOverlay.disabled = (selectedOverlayId == null);
 }
 
 function renderTokens() {
@@ -1144,6 +1290,58 @@ document.addEventListener("fullscreenchange", () => {
   renderTokens();
 });
 
+// ----- Overlay buttons -----
+btnAddCone?.addEventListener("click", () => {
+  const s = getOverlaysState();
+
+  const id = s.overlayIdSeq++;
+  // Start near top-left of the current view. This is simple + reliable.
+  const overlay = {
+    id,
+    kind: "cone",
+    x: 140,
+    y: 140,
+    rot: 0,
+    scaleX: 1,
+    scaleY: 1
+  };
+
+  s.overlays.push(overlay);
+  selectedOverlayId = id;
+
+  saveVttState({ overlays: s.overlays, overlayIdSeq: s.overlayIdSeq });
+  if (btnRemoveOverlay) btnRemoveOverlay.disabled = false;
+  renderOverlays();
+});
+
+btnRemoveOverlay?.addEventListener("click", () => {
+  if (selectedOverlayId == null) return;
+  const s = getOverlaysState();
+  s.overlays = s.overlays.filter(o => o.id !== selectedOverlayId);
+  selectedOverlayId = null;
+  saveVttState({ overlays: s.overlays, overlayIdSeq: s.overlayIdSeq });
+  btnRemoveOverlay.disabled = true;
+  renderOverlays();
+});
+
+btnClearOverlays?.addEventListener("click", () => {
+  const ok = confirm("Clear all overlays?");
+  if (!ok) return;
+  const s = getOverlaysState();
+  s.overlays = [];
+  selectedOverlayId = null;
+  saveVttState({ overlays: s.overlays, overlayIdSeq: s.overlayIdSeq });
+  if (btnRemoveOverlay) btnRemoveOverlay.disabled = true;
+  renderOverlays();
+});
+
+// Click empty map area = deselect overlay
+document.getElementById("mapWorld")?.addEventListener("pointerdown", () => {
+  selectedOverlayId = null;
+  if (btnRemoveOverlay) btnRemoveOverlay.disabled = true;
+  renderOverlays();
+});
+
 // ---------- Resize stability ----------
 const ro = new ResizeObserver(() => {
   renderTokens();
@@ -1292,6 +1490,7 @@ applyCamera();
 applyTokenSize();
 updateGridUI();
 drawGrid();
+renderOverlays();
 updateFogUI();
 drawFog();
 hydrateFromTracker();
