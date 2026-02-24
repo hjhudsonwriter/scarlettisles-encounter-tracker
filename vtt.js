@@ -36,6 +36,8 @@ const btnFogAll = el("btnFogAll");
 const btnFogCover = el("btnFogCover");
 const btnFogSm = el("btnFogSm");
 const btnFogLg = el("btnFogLg");
+const btnFogReset = el("btnFogReset");
+const btnFogMonsters = el("btnFogMonsters");
 const fogReadout = el("fogReadout");
 const btnMeasure = el("btnMeasure");
 const measureReadout = el("measureReadout");
@@ -101,12 +103,15 @@ function loadVttState() {
       // Fog of War
 fog: {
   enabled: false,
-  revealAll: true,        // when fog is "off", we treat it as revealed
+  revealAll: true,      // when fog is "off", we treat it as revealed
   radiusSquares: 6,
   opacity: 0.90,
 
-  // NEW: persistent exploration memory (grid cells)
-  exploredCells: []       // array of "x,y" strings
+  // persistent explored cells
+  exploredCells: [],
+
+  // option: if true, monsters are hidden by fog; if false, monsters render above fog
+  monstersUnderFog: true
 }
   };
 
@@ -138,6 +143,9 @@ fog: {
     s.fog.radiusSquares ??= fallback.fog.radiusSquares;
     s.fog.opacity ??= fallback.fog.opacity;
     s.fog.exploredCells ??= fallback.fog.exploredCells;
+    s.fog ||= {};
+    s.fog.exploredCells ??= [];
+    s.fog.monstersUnderFog ??= true;
 
     return s;
   } catch {
@@ -375,7 +383,11 @@ function updateFogUI() {
     fogReadout.textContent = `Fog: ${r} sq • ${f.revealAll ? "Revealed" : "Covered"}`;
   }
   if (fsFogRange) fsFogRange.value = String(vttState.fog?.radiusSquares ?? 6);
-if (fsFogReadout) fsFogReadout.textContent = `Fog: ${vttState.fog?.radiusSquares ?? 6} sq`;
+  if (fsFogReadout) fsFogReadout.textContent = `Fog: ${vttState.fog?.radiusSquares ?? 6} sq`;
+  if (btnFogMonsters) {
+  const under = (vttState.fog?.monstersUnderFog !== false);
+  btnFogMonsters.textContent = under ? "Monsters: Under fog" : "Monsters: Above fog";
+} 
 }
 
 // ---------- Camera / world transform ----------
@@ -449,6 +461,7 @@ mapUpload?.addEventListener("change", () => {
     mapImage.src = dataUrl;
     mapImage.style.display = "block";
     mapUpload.value = "";
+    resetFog({ keepEnabled: true });
   };
   reader.readAsDataURL(file);
 });
@@ -457,6 +470,9 @@ btnClearMap?.addEventListener("click", () => {
   saveMap("");
   mapImage.removeAttribute("src");
   mapImage.style.display = "none";
+
+  // ALSO wipe fog reveal pattern
+  resetFog({ keepEnabled: true });
 });
 
 // ---------- Tokens ----------
@@ -551,6 +567,18 @@ function pointerToWorld(e) {
 
   const { x, y, zoom } = vttState.camera;
   return { x: (sx - x) / zoom, y: (sy - y) / zoom };
+}
+
+function resetFog({ keepEnabled = true } = {}) {
+  vttState.fog ||= {};
+  vttState.fog.exploredCells = [];
+  if (keepEnabled) {
+    vttState.fog.enabled = true;
+    vttState.fog.revealAll = false; // fully covered after reset
+  }
+  saveVttState();
+  updateFogUI();
+  drawFog();
 }
 
 // ---------- Fog exploration stamping (persistent reveal) ----------
@@ -927,6 +955,19 @@ btnFogSm?.addEventListener("click", () => {
   vttState.fog.radiusSquares = clamp((vttState.fog.radiusSquares || 6) - 1, 1, 30);
   saveVttState();
   updateFogUI();
+  drawFog();
+});
+
+btnFogReset?.addEventListener("click", () => {
+  resetFog({ keepEnabled: true });
+});
+
+btnFogMonsters?.addEventListener("click", () => {
+  vttState.fog ||= {};
+  vttState.fog.monstersUnderFog = !(vttState.fog.monstersUnderFog !== false); // toggle
+  saveVttState();
+  updateFogUI();
+  renderTokens();
   drawFog();
 });
 
