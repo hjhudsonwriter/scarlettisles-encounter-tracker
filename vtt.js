@@ -514,6 +514,11 @@ if (vttState.removed?.[c.encId]) {
     const token = document.createElement("div");
     token.className = "token";
     token.dataset.encId = c.encId;
+    // If monstersUnderFog is OFF, render monsters ABOVE fog
+const monstersUnderFog = (vttState.fog?.monstersUnderFog !== false);
+if (c.type === "monster" && !monstersUnderFog) {
+  token.style.zIndex = "30";
+}
 
     // Highlight the token whose turn it is
 if (activeTurnEncId && c.encId === activeTurnEncId) {
