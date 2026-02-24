@@ -68,6 +68,10 @@
   <button class="btn ghost" id="btnFogAll" type="button">Reveal all</button>
   <button class="btn ghost" id="btnFogReset" type="button">Reset fog</button>
   <button class="btn ghost" id="btnFogMonsters" type="button">Monsters: Under fog</button>
+      
+  <button class="btn ghost" id="btnAddCone" type="button">Add LOS Cone</button>
+<button class="btn ghost" id="btnRemoveOverlay" type="button" disabled>Remove overlay</button>
+<button class="btn ghost" id="btnClearOverlays" type="button">Clear overlays</button>    
 </div>
 
 <div class="vttControlGroup">
@@ -96,9 +100,14 @@
 <div id="mapStage">
   <div id="mapWorld">
   <img id="mapImage" alt="Battlemap" />
-  <canvas id="gridCanvas"></canvas>
-  <div id="tokenLayer"></div>
-  <div id="marquee" hidden></div>
+<canvas id="gridCanvas"></canvas>
+
+<!-- NEW: overlays live here (under fog, above map) -->
+<div id="overlayLayer"></div>
+
+<div id="tokenLayer"></div>
+<div id="marquee" hidden></div>
+    
 </div>
     <!-- floating ruler (always visible, even not fullscreen) -->
   <button id="btnMeasure" class="vttFloatBtn" type="button" title="Measure distance (Ruler)">📏</button>
