@@ -612,7 +612,7 @@ function stampExploredFromTokens() {
   const explored = fogExploredSet();
 
   // Tokens that should reveal fog: PCs + NPCs (escort tokens)
-  const revealers = roster.filter(c => (c.type === "pc" || c.type === "npc") && !c.defeated && (c.curHp ?? 1) > 0);
+  const revealers = roster.filter(c => (c.type === "pc") && !c.defeated && (c.curHp ?? 1) > 0);
 
   revealers.forEach(c => {
     const pos = vttState.tokenPos[c.encId];
