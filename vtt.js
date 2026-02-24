@@ -1490,7 +1490,7 @@ applyCamera();
 applyTokenSize();
 updateGridUI();
 drawGrid();
-renderOverlays();
 updateFogUI();
 drawFog();
 hydrateFromTracker();
+renderOverlays();
