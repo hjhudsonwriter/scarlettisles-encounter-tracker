@@ -95,6 +95,13 @@ body.vtt .btn.ghost:hover {
   z-index: 10;         /* ABOVE grid */
 }
 
+#fogCanvas {
+  position: absolute;
+  inset: 0;
+  z-index: 20;       /* above tokens by default */
+  pointer-events: none;
+}
+
 /* ---------- Tokens ---------- */
 .token {
   position: absolute;
